@@ -12,5 +12,5 @@ A basic UNIX-like **file system** built in **C**, featuring:
 ## Contributors
 
 - [Imed Bousakhria](https://github.com/ImedBousakhria)
-- [Feryel Boubeker](https://github.com/FeryelBoubeker)
 - [Dyhia Boudjema](https://github.com/BoudjemaDyhia)
+- [Feryel Boubeker](https://github.com/FeryelBoubeker)
