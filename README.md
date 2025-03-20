@@ -1,6 +1,7 @@
 Mini Filesystem in C
 
 A basic UNIX-like **file system** built in **C**, featuring:
+
 ✅ File and directory operations (create, delete, read, write, move)  
 ✅ Custom partition stored in a **single UNIX file**  
 ✅ **File permissions** (Read, Write, Execute)  
