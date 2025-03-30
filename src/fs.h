@@ -4,10 +4,18 @@
 #include <disk.h>
 
 typedef struct {
-    int used;              // 1 if used 0 if not
-    int size;              // file size in bytes
-    int *block;            // pointers to data blocks (multiple pointers to each block)
-    int permissions;       // permits
+    int isDirectory;       // 1 = Directory, 0 = File
+    int used;             // 1 if used, 0 if free
+    int size;             // File size in bytes
+    int permissions;      // UNIX-style permissions
+
+    int *blocks;          // For files: dynamically allocated block pointers
+
+    struct {              
+        int num_entries;      // How many files/subdirectories exist
+        DirectoryEntry *entries;  // Dynamic list of directory contents
+    } directory;
+
 } Inode;
 
 typedef struct {
@@ -20,8 +28,3 @@ typedef struct {
     DirectoryEntry root_directory[NUM_BLOCKS]; // root directory
     uint8_t free_blocks[NUM_BLOCKS];      // bitmap we'll see if we keep it
 } FileSystem;
-
-// Inode allocationInode(Inode ino, int n_block){
-//     int *tab= (int *)malloc(sizeof(int) * n_block);
-    
-// }
