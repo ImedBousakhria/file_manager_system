@@ -17,28 +17,52 @@ int find_free_inode() {
             return i;
         }
     }
-    // don't forget to increament the nb_inodes when you create the inode if i == nb_inodes+1
-    return nb_inodes+1; // No free inodes available
+    // don't forget to increament the nb_inodes when you create the inode if i == nb_inodes + 1 
+    return nb_inodes + 1; 
 }
 
 // Function to find the directory index corresponding to an inode
 
 
-// change this imed !!!!!!!!!! it's finding the path if it exists (take a string i think then looks in the entry names and is dir) then just return the index in the 
-// directory table in the file system 
+// change this imed !!!!!!!!!! it's finding the path if it exists (take a string i think then looks in the entry names and is dir)
+// then just return the index in the directory table in the file system 
 
 
-int find_directory_index(int inode_idx) {
-    for (int i = 0; i < MAX_DIR; i++) {
-        if (fs_metadata.directories[i].num_entries > 0) {
-            for (int j = 0; j < fs_metadata.directories[i].num_entries; j++) {
-                if (fs_metadata.directories[i].entries[j].inode_index == inode_idx) {
-                    return i;  // Found the directory index
-                }
+int find_directory_index(const char *path) {
+    // Path copy
+    char *path_copy = strdup(path);  
+
+    // Tokenize directories composing the path
+    char *token = strtok(path_copy, "/"); 
+    
+    // start from root directory
+    int current_dir_index = 0;
+
+    while (token != NULL) {
+        int found = 0;
+
+        // Unique loop, because we're jump searching (not sequencial)
+        for (int i = 0; i < fs_metadata.directories[current_dir_index].num_entries; i++) {
+            if (strcmp(fs_metadata.directories[current_dir_index].entries[i].name, token) == 0) {
+
+                current_dir_index = fs_metadata.directories[current_dir_index].entries[i].inode_index;
+                found = 1;
+                break;
             }
         }
+
+        // a path component is not found in its parent = invalid path
+        if (!found) {
+            free(path_copy);
+            return -1; // path doesn't exist
+        }
+
+        // Move to the next token (next directory in path)
+        token = strtok(NULL, "/");
     }
-    return -1; // Directory not found
+
+    free(path_copy);
+    return current_dir_index;
 }
 /*
     deleting an entry from the directory 
@@ -95,7 +119,11 @@ void create_file(const char *filename, char* parent_path, int user) {
         printf("Error: Directory is full.\n");
         return;
     }
-
+/*
+    if (!parent_inode){
+        return -1;
+    }
+*/
     // Find a free inode for the new file
     int new_inode_idx = find_free_inode();
     //check for free inodes in the Inodes table in FileSystem 
@@ -109,10 +137,10 @@ void create_file(const char *filename, char* parent_path, int user) {
     if( new_inode_idx == (n_inodes +1)){
         // update the nb_inodes
         FileSystem *fs =  &fs_metadata;
-        fs->nb_inodes = n_inodes+1;
+        fs->nb_inodes = n_inodes + 1;
     }
 
-    // Initialize the new file inode
+    // Init the new file inode
     Inode *new_inode = &fs_metadata.inodes[new_inode_idx];
     new_inode->used = 1;
     new_inode->size = 0;
