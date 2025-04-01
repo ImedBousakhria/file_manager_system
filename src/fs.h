@@ -13,12 +13,12 @@
 
 typedef struct {
     int isfile;
-    int dir_parent;   // the dir parent
     char name[MAX_NAME_LENGTH];  // File/Directory name
     int inode_index;             // Points to the inode of file/directory
 } DirectoryEntry;
 
 typedef struct {
+    int parent_index;
     int num_entries;                   // Number of files/directories
     DirectoryEntry entries[MAX_ENTRIES_PER_DIR]; // Directory contents
     /*
