@@ -4,7 +4,7 @@
 #include "fs.h"
 
 FILE *disk_file;
-FileSystem fs_metadata;
+// FileSystem fs_metadata;
 
 int disk_init() {
     if(!fopen("fs_vdisk.img", 'rb+')) {
