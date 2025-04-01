@@ -67,8 +67,8 @@ void create_file(const char *filename, int parent_inode_idx, int user) {
     Inode *new_inode = &fs_metadata.inodes[new_inode_idx];
     new_inode->used = 1;
     new_inode->size = 0;
-    new_inode->permissions = 0777;
-    new_inode->dir_index = parent_inode_idx; // Set parent directory
+    new_inode->permissions = 777;
+    new_inode->parent_index = parent_inode_idx; // Set parent directory
 
     // Update inode count
     fs_metadata.nb_inodes++;

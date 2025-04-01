@@ -27,7 +27,8 @@ typedef struct {
     int used;              // 1 if used, 0 if free
     int size;              // File size in bytes (0 for directories)
     int permissions;       // UNIX-style permissions
-    int blocks[30];          
+    int blocks[30]; 
+    int parent_index;         
 } Inode;
 
 typedef struct {
