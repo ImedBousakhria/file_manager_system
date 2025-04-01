@@ -28,6 +28,8 @@ void init_fs(){
     FileSystem *fs = &fs_metadata;
     fs->nb_inodes= 0;
     fs->nb_directories = 0;
+    // fill out the users feryel imed dyhia 
+    
 
 }
 

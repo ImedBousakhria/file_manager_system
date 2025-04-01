@@ -30,6 +30,7 @@ typedef struct {
     int used;              // 1 if used, 0 if free
     int size;              // File size in bytes (0 for directories)
     int permissions;       // UNIX-style permissions
+    int owner_indx;
     int blocks[30];      
     int parent_index;    
 } Inode;
@@ -40,7 +41,13 @@ typedef struct {
     Inode inodes[NUM_BLOCKS];  // Inode table
     Directory directories[MAX_DIR];   // max of the directories that you can ever create
     uint8_t free_blocks[NUM_BLOCKS];  // Bitmap for free blocks
+    User users[3];
 } FileSystem;
+typedef struct{
+    char * name;
+    int groupe;
+}User;
+
 
 extern FileSystem fs_metadata;
 
