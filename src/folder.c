@@ -7,7 +7,7 @@ int main (int argc, char *argv[]) {
 }
 
 void create_directory(const char *dirname, int parent_inode_idx) {
-    Inode *inode = &fs.inodes[parent_inode_idx];
+    Inode *inode = &fs_metadata.inodes[parent_inode_idx];
 
     if (!inode->isDirectory) {
         printf("Error: Parent must be a directory.\n");
@@ -21,22 +21,22 @@ void create_directory(const char *dirname, int parent_inode_idx) {
     }
 
     // Initialize directory inode
-    fs.inodes[new_inode_idx].isDirectory = 1;
-    fs.inodes[new_inode_idx].used = 1;
-    fs.inodes[new_inode_idx].size = 0;
-    fs.inodes[new_inode_idx].permissions = 777;
-    fs.inodes[new_inode_idx].directory.num_entries = 2;  // . and ..
+    fs_metadata.inodes[new_inode_idx].isDirectory = 1;
+    fs_metadata.inodes[new_inode_idx].used = 1;
+    fs_metadata.inodes[new_inode_idx].size = 0;
+    fs_metadata.inodes[new_inode_idx].permissions = 777;
+    fs_metadata.inodes[new_inode_idx].directory.num_entries = 2;  // . and ..
 
     // Allocate initial space for 2 entries
-    fs.inodes[new_inode_idx].directory.entries = malloc(sizeof(DirectoryEntry) * 2);
+    fs_metadata.inodes[new_inode_idx].directory.entries = malloc(sizeof(DirectoryEntry) * 2);
     
     // "." (self)
-    strcpy(fs.inodes[new_inode_idx].directory.entries[0].name, ".");
-    fs.inodes[new_inode_idx].directory.entries[0].inode_index = new_inode_idx;
+    strcpy(fs_metadata.inodes[new_inode_idx].directory.entries[0].name, ".");
+    fs_metadata.inodes[new_inode_idx].directory.entries[0].inode_index = new_inode_idx;
     
     // ".." (parent)
-    strcpy(fs.inodes[new_inode_idx].directory.entries[1].name, "..");
-    fs.inodes[new_inode_idx].directory.entries[1].inode_index = parent_inode_idx;
+    strcpy(fs_metadata.inodes[new_inode_idx].directory.entries[1].name, "..");
+    fs_metadata.inodes[new_inode_idx].directory.entries[1].inode_index = parent_inode_idx;
 
     // Add new dir to parent
     inode->directory.num_entries++;
@@ -46,4 +46,7 @@ void create_directory(const char *dirname, int parent_inode_idx) {
     DirectoryEntry *entry = &inode->directory.entries[inode->directory.num_entries - 1];
     strcpy(entry->name, dirname);
     entry->inode_index = new_inode_idx;
+
+    // we should save the fs_metadata 
+    
 }

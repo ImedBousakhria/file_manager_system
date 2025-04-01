@@ -7,12 +7,13 @@ FILE *disk_file;
 FileSystem fs_metadata;
 
 int disk_init() {
-    if(!fopen('fs_vdisk.img', 'rb+')) {
-        disk_file = fopen('fs_vdisk.img', 'wb+');
+    if(!fopen("fs_vdisk.img", 'rb+')) {
+        disk_file = fopen("fs_vdisk.img", 'wb+');
         
         if (!disk_file) return -1;
-        // treat
+        
     } else {
+        // we read the first bite from the adress of the disk
        fread(&fs_metadata, sizeof(FileSystem) , 1, disk_file);
     }
     return 0;
