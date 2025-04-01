@@ -43,6 +43,7 @@ typedef struct {
     uint8_t free_blocks[NUM_BLOCKS];  // Bitmap for free blocks
     User users[3];
 } FileSystem;
+
 typedef struct{
     char * name;
     int groupe;
