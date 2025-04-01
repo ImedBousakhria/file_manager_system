@@ -74,7 +74,7 @@ int delete_entry(){
 }
 
 /*
-    we have to replace it with the last one in the inodes table 
+    change the used to 0 
     go back to the dir and delete it from an entry with delete_entry(int index_entry)
 */
 int delete_inode(int inode_index){
@@ -82,21 +82,23 @@ int delete_inode(int inode_index){
 }
 
 /**
- * check if the file existes in the dir given 
+ * check if the file/directory existes in the dir given 
  */
-int file_exists(char *filename, int dir_index){
+int entry_exists(char *name, int dir_index, int isfile){
     Directory dir =fs_metadata.directories[dir_index];
     for(int i=0; i < dir.num_entries; i++){
-        if(strcmp(dir.entries[i].name, filename) && dir.entries[i].isfile){
+        if(strcmp(dir.entries[i].name, name) && (dir.entries[i].isfile == isfile)){
             return 1;
         }
     }
     return 0;
 }
 
+
+
 // here i have to change the second param to be a path then we look for its index with the function
 // for now the user is an int 
-void create_file(const char *filename, char* parent_path, int user) {
+void create_file(const char *filename, char* parent_path, int user_index) {
     
     // get out if parent_path does not exist 
     int dir_idx = find_directory_index(parent_path);
@@ -107,7 +109,7 @@ void create_file(const char *filename, char* parent_path, int user) {
     
     //check if there is a file with the same name in the dir 
 
-    if(file_exists(filename, dir_idx)){
+    if(entry_exists(filename, dir_idx, 1)){
         printf("Error: a file with the same name already exists");
         return;
     }
@@ -119,11 +121,7 @@ void create_file(const char *filename, char* parent_path, int user) {
         printf("Error: Directory is full.\n");
         return;
     }
-/*
-    if (!parent_inode){
-        return -1;
-    }
-*/
+
     // Find a free inode for the new file
     int new_inode_idx = find_free_inode();
     //check for free inodes in the Inodes table in FileSystem 
@@ -145,6 +143,7 @@ void create_file(const char *filename, char* parent_path, int user) {
     new_inode->used = 1;
     new_inode->size = 0;
     new_inode->permissions = 777;
+    new_inode->owner_indx = user_index;
     new_inode->parent_index = dir_idx; // Set parent directory
 
  
