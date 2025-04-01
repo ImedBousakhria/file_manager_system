@@ -19,6 +19,7 @@ typedef struct {
 } DirectoryEntry;
 
 typedef struct {
+    int parent_index;               // index of the dir parent 
     int num_entries;                   // Number of files/directories
     DirectoryEntry entries[MAX_ENTRIES_PER_DIR]; // Directory contents
 } Directory;
@@ -27,12 +28,12 @@ typedef struct {
     int used;              // 1 if used, 0 if free
     int size;              // File size in bytes (0 for directories)
     int permissions;       // UNIX-style permissions
-    int blocks[30]; 
-    int parent_index;         
+    int blocks[30];         // the content
+    int parent_index;     // parent dir index    
 } Inode;
 
 typedef struct {
-    int nb_inodes;     // keep track of how many inodes did we fill 
+    int nb_inodes;     // keep track of how many inodes did we fill (not all of them are used)
     int nb_directories;   // keep track of how many dir did we fill 
     Inode inodes[NUM_BLOCKS];  // Inode table
     Directory directories[MAX_DIR];   // max of the directories that you can ever create
