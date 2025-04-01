@@ -15,26 +15,23 @@ int find_free_inode() {
             return i;
         }
     }
-    // don't forget to increament the nb_inodes when you create the inode if i == nb_inodes+1
-    return nb_inodes+1; // No free inodes available
+    // don't forget to increament the nb_inodes when you create the inode if i == nb_inodes + 1 
+    return nb_inodes + 1; 
 }
 
 // Function to find the directory index corresponding to an inode
 
 
-// change this imed !!!!!!!!!! it's finding the path if it exists (take a string i think then looks in the entry names and is dir) then just return the index in the 
-// directory table in the file system 
+// change this imed !!!!!!!!!! it's finding the path if it exists (take a string i think then looks in the entry names and is dir)
+// then just return the index in the directory table in the file system 
 
 
-int find_directory_index(int inode_idx) {
+int find_directory_index(char* path) {
     for (int i = 0; i < MAX_DIR; i++) {
-        if (fs_metadata.directories[i].num_entries > 0) {
-            for (int j = 0; j < fs_metadata.directories[i].num_entries; j++) {
-                if (fs_metadata.directories[i].entries[j].inode_index == inode_idx) {
+        // only check the first entry since it's the one containing the dir name
+                if (strcmp(fs_metadata.directories[i].entries[1].name, path)) {
                     return i;  // Found the directory index
                 }
-            }
-        }
     }
     return -1; // Directory not found
 }
@@ -68,7 +65,7 @@ void create_file(const char *filename, int parent_inode_idx, int user) {
     new_inode->used = 1;
     new_inode->size = 0;
     new_inode->permissions = 0777;
-    new_inode->dir_index = parent_inode_idx; // Set parent directory
+    // new_inode->dir_index = parent_inode_idx; // Set parent directory
 
     // Update inode count
     fs_metadata.nb_inodes++;
