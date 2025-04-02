@@ -9,7 +9,11 @@
 #define MAX_NAME_LENGTH 32
 #define NUM_BLOCKS 1024  // Adjust as needed
 #define MAX_ENTRIES_PER_DIR 128  // Example max entries in a directory
-#define MAX_DIR 15
+#define MAX_DIR 15 // max directories in our fs
+
+#define MAX_PATH_LENGTH 256  // path length used in cwd
+char current_working_directory[MAX_PATH_LENGTH] = "/"; 
+int cwd_index = 0;
 
 typedef struct {
     int isfile;
@@ -22,6 +26,7 @@ typedef struct {
     int num_entries;                   // Number of files/directories
     DirectoryEntry entries[MAX_ENTRIES_PER_DIR]; // Directory contents
     /* first entry in entries would be the directory itself */
+    /* second one's like {.. : parent dir index} */
 } Directory;
 
 typedef struct {
