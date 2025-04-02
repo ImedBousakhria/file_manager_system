@@ -3,7 +3,7 @@
 #include "fs.h"
 
 
-int find_free_inode() {
+int find_free_inode(){
     int nb_inodes = fs_metadata.nb_inodes;
     if (nb_inodes >= NUM_BLOCKS) {
         return -1; // No free inodes available
@@ -19,7 +19,7 @@ int find_free_inode() {
 }
 
 // Function to find the directory index corresponding to a path
-int find_directory_index(const char *path) {
+int find_directory_index(const char *path){
     // Path copy
     char *path_copy = strdup(path);  
 
