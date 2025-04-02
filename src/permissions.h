@@ -14,6 +14,7 @@
 #define GROUP_USER   1
 #define NUM_GROUPS   2
 
+
 // Fonctions de vérification des permissions
 int check_permission(const char* username, int inode_idx, int permission_type);
 int user_can_read(const char* username, int inode_idx);
