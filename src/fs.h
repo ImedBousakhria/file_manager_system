@@ -21,9 +21,7 @@ typedef struct {
     int parent_index;
     int num_entries;                   // Number of files/directories
     DirectoryEntry entries[MAX_ENTRIES_PER_DIR]; // Directory contents
-    /*
-    first entry in entries would be the directory itself
-    */
+    /* first entry in entries would be the directory itself */
 } Directory;
 
 typedef struct {
@@ -43,10 +41,11 @@ typedef struct {
     uint8_t free_blocks[NUM_BLOCKS];  // Bitmap for free blocks
     User users[3];
 } FileSystem;
+
 typedef struct{
     char * name;
     int groupe;
-}User;
+} User;
 
 
 extern FileSystem fs_metadata;
