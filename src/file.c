@@ -297,7 +297,7 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
         }
 
         // Seek to the correct block location
-        seek_to_location(disk_file, block_idx, offset_in_block);
+        seek_to_location(disk_file, block_idx, 0);
 
         // Read data from the block into the buffer
         int read_size = (buffer_size - bytes_read < BLOCK_SIZE) ? buffer_size - bytes_read : BLOCK_SIZE;
