@@ -96,7 +96,6 @@ int entry_exists(char *name, int dir_index, int isfile){
 
 
 
-// here i have to change the second param to be a path then we look for its index with the function
 // for now the user is an int 
 int create_file(const char *filename, char* parent_path, int user_index) {
     
@@ -157,6 +156,7 @@ int create_file(const char *filename, char* parent_path, int user_index) {
 }
 
 
+/* Changing the actual content of a file aka writing in the last spot */
 void write_to_file(const char *parent_path, const char *filename, const char *data){
     // find the directory index from provided path
     int parent_inode_idx = find_directory_index(parent_path);
@@ -185,7 +185,7 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
     int remaining_size = size;
     int data_offset = 0;
 
-    FILE *disk_file = fopen("disk.img", "r+b");
+    FILE *disk_file = fopen("fs_vdisk.img", "r+b");
     if (!disk_file) {
         printf("Error: Could not open disk file.\n");
         return;
@@ -222,27 +222,180 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
             return;
         }
 
-        // Seek to the correct position in the block
+        // Seek the correct location of the right block
         fseek(disk_file, block_idx * BLOCK_SIZE + offset_in_last_block, SEEK_SET);
 
-        // Write the necessary amount of data
+        // write the necessary amount of data 
         int writable_size = (remaining_size < (BLOCK_SIZE - offset_in_last_block)) ? remaining_size : (BLOCK_SIZE - offset_in_last_block);
         fwrite(data + data_offset, 1, writable_size, disk_file);
 
-        // Update counters
+        // update counters
         remaining_size -= writable_size;
         data_offset += writable_size;
         last_block_index++;
-        offset_in_last_block = 0; // Only the first block might have an offset
+        offset_in_last_block = 0;
     }
 
     fclose(disk_file);
 
-    // Update file size
+    // update file size
     file_inode->size += size;
 
-    // Save changes
+    // save changes
     save_file_system();
 
     printf("Successfully wrote %d bytes to file '%s'.\n", size, filename);
+}
+
+//  utility function to seek location based on offset calculated
+void seek_to_location(FILE *disk_file, int block_idx, int offset_in_block) {
+    fseek(disk_file, block_idx * BLOCK_SIZE + offset_in_block, SEEK_SET);
+}
+
+
+void read_from_file(const char *parent_path, const char *filename, char *buffer, int buffer_size) {
+    // Find the directory index from provided path
+    int parent_inode_idx = find_directory_index(parent_path);
+    if (parent_inode_idx == -1) {
+        printf("Path is not valid\n");
+        return;
+    }
+
+    // check if file exists in the path, if not, do nothing
+    int file_inode_idx = -1;
+    Directory *parent_directory = &fs_metadata.directories[parent_inode_idx];
+    for (int i = 0; i < parent_directory->num_entries; i++) {
+        if (strcmp(parent_directory->entries[i].name, filename) == 0) {
+            file_inode_idx = parent_directory->entries[i].inode_index;
+            break;
+        }
+    }
+
+    if (file_inode_idx == -1) {
+        printf("File does not exist\n");
+        return;
+    }
+
+    Inode *file_inode = &fs_metadata.inodes[file_inode_idx];
+
+    // Actually reading the file data 
+    int bytes_read = 0;
+    int block_idx;
+    int offset_in_block = file_inode->size % BLOCK_SIZE;
+
+    FILE *disk_file = fopen("fs_vdisk.img", "rb");
+    if (!disk_file) {
+        printf("Error: Could not open disk file.\n");
+        return;
+    }
+
+    for (int i = 0; i < 30 && bytes_read < buffer_size; i++) {
+        block_idx = file_inode->blocks[i];
+        if (block_idx == 0) {
+            break; // No more blocks, exit
+        }
+
+        // Seek to the correct block location
+        seek_to_location(disk_file, block_idx, offset_in_block);
+
+        // Read data from the block into the buffer
+        int read_size = (buffer_size - bytes_read < BLOCK_SIZE) ? buffer_size - bytes_read : BLOCK_SIZE;
+        fread(buffer + bytes_read, 1, read_size, disk_file);
+        
+        bytes_read += read_size;
+        offset_in_block = 0; // no offset needed for next new blocks
+    }
+
+    fclose(disk_file);
+
+    // error case 1: not enough data has been retrieved
+    if (bytes_read < buffer_size) {
+        printf("Warning: Only %d bytes were read from file '%s'.\n", bytes_read, filename);
+    }
+
+    printf("Successfully read %d bytes from file '%s'.\n", bytes_read, filename);
+}
+
+
+const char* getcwd() {
+    return current_working_directory;
+}
+
+
+// utility function that builds paths up to root
+void get_full_path_from_index(int dir_index, char *output_path) {
+    char temp_path[MAX_PATH_LENGTH] = "";
+    char stack[15][MAX_NAME_LENGTH]; // Stack to store path parts
+    int stack_top = 0;
+
+    while (dir_index != 0) {  // Stop when reaching root
+        Directory *dir = &fs_metadata.directories[dir_index];
+
+        // Push directory name onto the stack
+        strncpy(stack[stack_top], dir->entries[0].name, MAX_NAME_LENGTH);
+        stack_top++;
+
+        // Move to parent directory
+        dir_index = dir->parent_index;
+    }
+
+    // Build the final path from stack
+    strcat(temp_path, "/");
+    for (int i = stack_top - 1; i >= 0; i--) {
+        strcat(temp_path, stack[i]);
+        if (i > 0) strcat(temp_path, "/"); // Add slashes between directories
+    }
+
+    // Copy to output
+    strncpy(output_path, temp_path, MAX_PATH_LENGTH);
+}
+
+
+// change cwd in 2 cases: absolute / relative path was given
+int chdir(const char *path) {
+    char new_path[MAX_PATH_LENGTH];
+
+    if(!find_directory_index(path)) {
+        // not a valid path in the tree
+        return -1;
+    }
+    else {
+        if (path[0] == '/'){
+            strncpy(current_working_directory, path, MAX_PATH_LENGTH);
+        }
+        else{
+            
+            char *path_copy = strdup(new_path);
+            char *token = strtok(path_copy, "/");
+
+            int current_dir_index = (path[0] == '/') ? 0 : cwd_index;
+
+            while (token) {
+                if (strcmp(token, "..") == 0) {
+                    if (current_dir_index != 0) {
+                        current_dir_index = fs_metadata.directories[current_dir_index].parent_index;
+                    }
+                } else if (strcmp(token, ".") != 0) {
+                    // Move into the directory if valid
+                    // I might need a loop actually
+                    int next_index = find_directory_index(token);
+                    if (next_index == -1) {
+                        printf("Error: Directory '%s' not found.\n", token);
+                        free(path_copy);
+                        return -1;
+                    }
+                    current_dir_index = next_index;
+                }
+        
+                token = strtok(NULL, "/");
+            }
+            free(path_copy);
+            char *final_path;
+            get_full_path_from_index(current_dir_index, final_path);
+            strncpy(current_working_directory, final_path, MAX_PATH_LENGTH);
+            cwd_index = current_dir_index;
+        
+            return 0;
+        }
+    }
 }
