@@ -33,6 +33,11 @@ typedef struct {
     int parent_index;    
 } Inode;
 
+typedef struct{
+    char * name;
+    int groupe;
+} User;
+
 typedef struct {
     int nb_inodes;     // keep track of how many inodes did we fill (not all of them are used)
     int nb_directories;   // keep track of how many dir did we fill 
@@ -41,11 +46,6 @@ typedef struct {
     uint8_t free_blocks[NUM_BLOCKS];  // Bitmap for free blocks
     User users[3];
 } FileSystem;
-
-typedef struct{
-    char * name;
-    int groupe;
-} User;
 
 
 extern FileSystem fs_metadata;

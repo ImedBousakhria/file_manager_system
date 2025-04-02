@@ -1,39 +1,114 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "fs.h"
 
-#define FS_FILE_NAME "fs_file_name.bin"
+#define FS_FILE_NAME "fs_vdisk.img"
 
+// Global variable for filesystem metadata
+FileSystem fs_metadata;
 
-
+/**
+ * Saves the current filesystem state to disk.
+ */
 void save_file_system() {
-    FILE *file = fopen(FS_FILE_NAME, "wb");
+    FILE *file = fopen(FS_FILE_NAME, "rb+");
     if (!file) {
-        perror("Error opening file");
+        perror("Error opening disk file for writing");
         return;
     }
 
-    // Write the entire FileSystem struct
     fwrite(&fs_metadata, sizeof(FileSystem), 1, file);
     fclose(file);
+
     printf("File system saved successfully.\n");
 }
-/*
-    this function is to initialize the fs struct
-    at the very first of of everything then we store it and
-    save and store it each time we change it
-*/ 
-void init_fs(){
 
-    FileSystem *fs = &fs_metadata;
-    fs->nb_inodes= 0;
-    fs->nb_directories = 0;
-    // fill out the users feryel imed dyhia 
+/**
+ * Loads the filesystem from disk.
+ * Returns 1 if successful, 0 otherwise.
+ */
+int load_file_system() {
+    FILE *file = fopen(FS_FILE_NAME, "rb");
+    if (!file) {
+        printf("Error: trying to load the filesystem but the disk image does not exist");
+        return 0; // Disk image doesn't exist
+    }
 
-    // create the root directory
+    size_t read_items = fread(&fs_metadata, sizeof(FileSystem), 1, file);
+    fclose(file);
 
+    if (read_items != 1) {
+        printf("Error reading filesystem data.\n");
+        return 0;
+    }
+
+    printf("File system loaded successfully.\n");
+    return 1;
 }
 
-int main (int argc, char *argv[]) {
-    return EXIT_SUCCESS;
+/**
+ * Initializes a new filesystem.
+ * - Creates a root directory.
+ * - Initializes metadata.
+ */
+void init_fs() {
+    memset(&fs_metadata, 0, sizeof(FileSystem));
+
+    FileSystem *fs = &fs_metadata;
+
+    // Initialize users
+    strcpy(fs->users[0].name, "feryel");
+    fs->users[0].groupe = 1;
+    
+    strcpy(fs->users[1].name, "imed");
+    fs->users[1].groupe = 1;
+    
+    strcpy(fs->users[2].name, "dyhia");
+    fs->users[2].groupe = 2;
+
+    // mark all blocks as free
+    memset(fs->free_blocks, 0, NUM_BLOCKS);
+
+    // set initial inode count
+    fs->nb_inodes = 0;
+
+    // Create the root directory
+    fs->nb_directories = 1;
+    Directory *root = &fs->directories[0];
+    //the parent is itself
+    root->parent_index = 0;
+    root->num_entries = 0;
+
+    // Add "." entry (self-reference)
+    DirectoryEntry self_entry;
+    self_entry.isfile = 0;
+    self_entry.inode_index = 0;
+    strcpy(self_entry.name, ".");
+    root->entries[root->num_entries++] = self_entry;
+
+    // Add ".." entry for root (points to itself)
+    DirectoryEntry parent_entry;
+    parent_entry.isfile = 0;
+    parent_entry.inode_index = 0; // Root points to itself
+    strcpy(parent_entry.name, "..");
+    root->entries[root->num_entries++] = parent_entry;
+
+
+    printf("File system initialized successfully.\n");
+
+    // save the initialized filesystem
+    save_file_system();
+}
+
+/**
+ * mounts the filesystem:
+ * - If the disk exists, loads it.
+ * - Otherwise, initializes a new filesystem.
+ */
+void mount_fs() {
+    if (!load_file_system()) {
+        printf("Creating new file system...\n");
+        init_fs();
+    }
 }

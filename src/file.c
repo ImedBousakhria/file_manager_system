@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "fs.h"
-
+#include "disk.h"
 // Function to find a free inode
 
 
@@ -17,7 +17,7 @@ int find_free_inode() {
             return i;
         }
     }
-    // don't forget to increament the nb_inodes when you create the inode if i == nb_inodes + 1 
+    // don't forget to increament the nb_inodes when you create the inode if i == nb_inodes  
     return nb_inodes; 
 }
 
@@ -39,7 +39,7 @@ int find_directory_index(const char *path) {
     while (token != NULL) {
         int found = 0;
 
-        // Unique loop, because we're jump searching (not sequencial)
+        // unique loop, because we're jump searching (not sequencial)
         for (int i = 0; i < fs_metadata.directories[current_dir_index].num_entries; i++) {
             if (strcmp(fs_metadata.directories[current_dir_index].entries[i].name, token) == 0) {
 
@@ -66,29 +66,140 @@ int find_directory_index(const char *path) {
 
 /*
     deleting an entry from the directory 
-    we put the last entry in it's place and decrease num_entries
-
+    put the last entry in it's place and decrease num_entries if not 0 after the deleting
+    no need to change any indexes here because you just changed 
 */ 
-int delete_entry(){
-     
+void delete_entry(int inode_index, int parent_index, int type){
+        
+        int entry_index = find_index_entry(inode_index, parent_index, type);
+        if(entry_index == -1){
+            printf("Error: The inode_index does not exist in the parent entries");
+            return;
+        }
+
+        Directory *dir = &fs_metadata.directories[parent_index];
+        int num_entries = dir->num_entries;
+        // we put the last one in it's palce 
+        if(entry_index < num_entries -1){
+            dir->entries[entry_index] = dir->entries[num_entries -1];
+        }
+
+        dir->num_entries = num_entries -1;
 }
 
 /*
-    change the used to 0 
-    go back to the dir and delete it from an entry with delete_entry(int index_entry)
+ *    change the used to 0 
+ *    go back to the dir and delete it from an entry with delete_entry(int index_entry)
+ *    free blocks when deleting files: the bitmaps = 0   
 */
-int delete_inode(int inode_index){
-    
+void delete_inode(int inode_index){
+    Inode *inode = &fs_metadata.inodes[inode_index];
+    inode->used = 0;
+    // remove from parent directory
+    int parent_index = inode->parent_index;
+    delete_entry(inode_index, parent_index, 1);
+    //we have to change the bitmaps in the blocks
+    int nb_blocks = ((inode->size) + BLOCK_SIZE -1 ) / BLOCK_SIZE;
+    for(int i=0; i< nb_blocks; i++){
+        int bit_map_index = inode->blocks[i];
+        FileSystem *fs= &fs_metadata;
+        fs->free_blocks[bit_map_index] = 0;
+    }
+    // we have to save the fs_metadata after and store it in the disk
 }
 
+
+
+/**
+ * deleting a directory
+ * here we get the last dir if it exist if not just make the num_directories-1 we keep the root
+ * we recursivelly delete everything under it 
+ */
+void delete_dir(int dir_index){
+
+    //before deleting a dir we have to make sure it's not the root
+    if(dir_index == 0){
+        printf("Error: You can't delete the root directory");
+        return;
+    }
+
+    Directory *dir = &fs_metadata.directories[dir_index];
+    Directory copy_dir = fs_metadata.directories[dir_index];
+    // check if it's the last in the table then just decrement the num_directories
+    int num_dir = fs_metadata.nb_directories;
+    if(dir_index < num_dir -1){
+        Directory last_dir = fs_metadata.directories[num_dir -1];
+        // replace the deleted directory with the last one
+        *dir = last_dir;
+        // change the index of last dir in its dir parent
+        int parent_index = last_dir.parent_index;
+        
+        Directory *parent_last_index = &fs_metadata.directories[parent_index];
+
+        int entry_index = find_index_entry(num_dir -1, parent_index, 0);
+        if(entry_index == -1){
+            printf("Error: The Code is BAD !!! check if you're putting the values right in parent_index in DirectoryEntry, check if you're saving correctly");
+            return;
+        }
+
+        // update the index of the last dir in his dir parent because we moved it 
+        parent_last_index->entries[entry_index].inode_index = dir_index;
+    }
+    //decrementing the num_directories in the two cases
+    FileSystem *fs = &fs_metadata;
+    fs->nb_directories = num_dir -1; 
+    // recursivlly delete everything under 
+    
+    for(int i=0; i< copy_dir.num_entries; i++){
+        DirectoryEntry entry = copy_dir.entries[i];
+
+        // skip "." and ".." entries to prevent infinite recursion
+
+        if(strcmp(entry.name, ".") == 0 || strcmp(entry.name, "..") == 0) {
+        continue;
+        }
+        if(entry.isfile){
+            delete_inode(entry.inode_index);
+        } else {
+            delete_dir(entry.inode_index);  // Only call for directories
+        }
+    }
+    // save the file system in the disk 
+
+}
+/**
+ * function that looks for the entry from the index in inodes/directories tables
+ * and the dir parent index to find it's place in the entires 
+ * returns the index in the entries 
+ */
+int find_index_entry(int index, int parent_index, int type){
+    Directory dir_parent = fs_metadata.directories[parent_index];
+    for(int i =0; i< dir_parent.num_entries; i++){
+        if((dir_parent.entries[i].inode_index == index) && (dir_parent.entries[i].isfile == type)){
+            return i;
+        }     
+    }
+    return -1;
+}
 /**
  * check if the file/directory existes in the dir given 
+ * 
  */
 int entry_exists(char *name, int dir_index, int isfile){
     Directory dir =fs_metadata.directories[dir_index];
     for(int i=0; i < dir.num_entries; i++){
         if(strcmp(dir.entries[i].name, name) == 0 && dir.entries[i].isfile == isfile){
-            return 1;
+            if(isfile){
+                /*check if inode used of not, we might have a deleted file with the same name*/
+                Inode inode = fs_metadata.inodes[dir.entries[i].inode_index];
+                if(inode.used){
+                    return 1;
+                }
+            }else{
+                return 1;
+            }
+
+            
         }
     }
     return 0;
