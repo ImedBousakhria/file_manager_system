@@ -62,6 +62,8 @@ int is_owner(const char* username, int inode_idx) {
 }
 
 // Vérifier si un utilisateur a une permission spécifique sur un inode
+
+// permission type : for exemple i have defined 3 variables in permissions.h , if i want to check permission read i need to type in 4 
 int check_permission(const char* username, int inode_idx, int permission_type) {
     // Vérifier si l'inode existe et est utilisé
     if (inode_idx < 0 || inode_idx >= fs_metadata.nb_inodes || !fs_metadata.inodes[inode_idx].used) {
@@ -91,9 +93,7 @@ int check_permission(const char* username, int inode_idx, int permission_type) {
     }
     
     // Vérifier si l'utilisateur est dans le même groupe que le propriétaire
-    // Note: Dans un système plus complet, chaque fichier aurait un groupe associé
-    // Pour simplifier, nous considérons que tous les utilisateurs du groupe USER 
-    // ont les permissions de groupe sur tous les fichiers
+
     if (fs_metadata.users[user_idx].groupe == GROUP_USER) {
         // Vérifier les permissions de groupe (bits 3-5)
         return ((perms >> 3) & 0x7 & permission_type) == permission_type;
@@ -119,9 +119,6 @@ int user_can_execute(const char* username, int inode_idx) {
 }
 
 
-
-
-
 // Fonction pour modifier les permissions d'un fichier (équivalent de chmod)
 int chmod_file(const char* username, int inode_idx, int new_permissions) {
     // Vérifier si l'inode existe et est utilisé
@@ -138,8 +135,7 @@ int chmod_file(const char* username, int inode_idx, int new_permissions) {
     }
     
     // Seul le propriétaire ou un administrateur peut modifier les permissions
-    if (fs_metadata.users[user_idx].groupe == GROUP_ADMIN || 
-        fs_metadata.inodes[inode_idx].owner_indx == user_idx) {
+    if (fs_metadata.users[user_idx].groupe == GROUP_ADMIN ||  fs_metadata.inodes[inode_idx].owner_indx == user_idx) {
         
         // Vérifier que les permissions sont valides (entre 0 et 0777)
         if (new_permissions < 0 || new_permissions > 0777) {
