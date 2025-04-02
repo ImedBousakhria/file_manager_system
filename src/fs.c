@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "fs.h"
+#include "permissions.h"
 
 #define FS_FILE_NAME "fs_vdisk.img"
 
@@ -57,15 +58,28 @@ void init_fs() {
 
     FileSystem *fs = &fs_metadata;
 
-    // Initialize users
-    strcpy(fs->users[0].name, "feryel");
-    fs->users[0].groupe = 1;
+    // // Initialize users
+    // strcpy(fs->users[0].name, "feryel");
+    // fs->users[0].groupe = 1;
     
-    strcpy(fs->users[1].name, "imed");
-    fs->users[1].groupe = 1;
+    // strcpy(fs->users[1].name, "imed");
+    // fs->users[1].groupe = 1;
     
-    strcpy(fs->users[2].name, "dyhia");
-    fs->users[2].groupe = 2;
+    // strcpy(fs->users[2].name, "dyhia");
+    // fs->users[2].groupe = 2;
+    User* dyhia = &fs_metadata.users[0];
+    dyhia->name = "dyhia";
+    dyhia->groupe = GROUP_ADMIN;
+    
+    // Feryel - admin (groupe 0)
+    User* feryel = &fs_metadata.users[1];
+    feryel->name = "feryel";
+    feryel->groupe = GROUP_ADMIN;
+    
+    // Imad - utilisateur standard (groupe 1)
+    User* imad = &fs_metadata.users[2];
+    imad->name = "imad";
+    imad->groupe = GROUP_USER;
 
     // mark all blocks as free
     memset(fs->free_blocks, 0, NUM_BLOCKS);
