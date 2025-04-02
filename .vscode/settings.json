@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "fs.h": "c"
+        "*.embeddedhtml": "html",
+        "fs.h": "c",
+        "stdlib.h": "c"
     }
 }
