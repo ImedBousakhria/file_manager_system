@@ -29,7 +29,8 @@ void init_fs(){
     fs->nb_inodes= 0;
     fs->nb_directories = 0;
     // fill out the users feryel imed dyhia 
-    
+
+    // create the root directory
 
 }
 
