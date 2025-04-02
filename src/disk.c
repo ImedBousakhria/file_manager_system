@@ -1,20 +1,36 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <disk.h>
+#include <string.h>
 #include "fs.h"
 
-FILE *disk_file;
-// FileSystem fs_metadata;
+#define DISK_FILE_NAME "fs_vdisk.img"
 
+FILE *disk_file;
+
+/**
+ * Initializes the virtual disk.
+ * - If the disk image exists, loads the filesystem.
+ * - If it doesn't exist, creates the disk and initializes the filesystem.
+ * Returns 0 on success, -1 on failure.
+ */
 int disk_init() {
-    if(!fopen("fs_vdisk.img", 'rb+')) {
-        disk_file = fopen("fs_vdisk.img", 'wb+');
-        
-        if (!disk_file) return -1;
-        
+    disk_file = fopen(DISK_FILE_NAME, "rb+");
+
+    if (!disk_file) {
+        printf("Creating new disk...\n");
+
+        // Create a new disk file
+        disk_file = fopen(DISK_FILE_NAME, "wb+");
+        if (!disk_file) {
+            perror("Error creating disk file");
+            return -1;
+        }
+
+        // initialize and save the file system (the save is inside the init)
+        init_fs();
     } else {
-        // we read the first bite from the adress of the disk
-       fread(&fs_metadata, sizeof(FileSystem) , 1, disk_file);
+        // load file system from disk
+        load_file_system();
     }
     return 0;
 }

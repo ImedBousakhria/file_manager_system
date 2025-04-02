@@ -9,7 +9,11 @@
 #define MAX_NAME_LENGTH 32
 #define NUM_BLOCKS 1024  // Adjust as needed
 #define MAX_ENTRIES_PER_DIR 128  // Example max entries in a directory
-#define MAX_DIR 15
+#define MAX_DIR 15 // max directories in our fs
+
+#define MAX_PATH_LENGTH 256  // path length used in cwd
+char current_working_directory[MAX_PATH_LENGTH] = "/"; 
+int cwd_index = 0;
 
 typedef struct {
     int isfile;
@@ -21,9 +25,8 @@ typedef struct {
     int parent_index;
     int num_entries;                   // Number of files/directories
     DirectoryEntry entries[MAX_ENTRIES_PER_DIR]; // Directory contents
-    /*
-    first entry in entries would be the directory itself
-    */
+    /* first entry in entries would be the directory itself */
+    /* second one's like {.. : parent dir index} */
 } Directory;
 
 typedef struct {
@@ -35,6 +38,11 @@ typedef struct {
     int parent_index;    
 } Inode;
 
+typedef struct{
+    char * name;
+    int groupe;
+} User;
+
 typedef struct {
     int nb_inodes;     // keep track of how many inodes did we fill (not all of them are used)
     int nb_directories;   // keep track of how many dir did we fill 
@@ -44,14 +52,13 @@ typedef struct {
     User users[3];
 } FileSystem;
 
-typedef struct{
-    char * name;
-    int groupe;
-}User;
-
 
 extern FileSystem fs_metadata;
 
 void save_file_system();
+int load_file_system();
+void init_fs();
+void mount_fs();
+int disk_init();
 
 #endif
