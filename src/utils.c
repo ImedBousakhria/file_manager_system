@@ -3,8 +3,10 @@
 #include "fs.h"
 
 
+
 int find_free_inode(){
     int nb_inodes = fs_metadata.nb_inodes;
+    printf("nb of inodes  %d", nb_inodes);
     if (nb_inodes >= NUM_BLOCKS) {
         return -1; // No free inodes available
     }
@@ -14,7 +16,7 @@ int find_free_inode(){
             return i;
         }
     }
-    // don't forget to increament the nb_inodes when you create the inode if i == nb_inodes  
+    // don't forget to increament the nb_inodes when you create the inode if i == nb_inodes 
     return nb_inodes; 
 }
 
@@ -76,31 +78,8 @@ void delete_entry(int inode_index, int parent_index, int type){
         }
 
         dir->num_entries = num_entries -1;
+
 }
-
-/*
- *    change the used to 0 
- *    go back to the dir and delete it from an entry with delete_entry(int index_entry)
- *    free blocks when deleting files: the bitmaps = 0   
-*/
-void delete_inode(int inode_index){
-    Inode *inode = &fs_metadata.inodes[inode_index];
-    inode->used = 0;
-    // remove from parent directory
-    int parent_index = inode->parent_index;
-    delete_entry(inode_index, parent_index, 1);
-    //we have to change the bitmaps in the blocks
-    int nb_blocks = ((inode->size) + BLOCK_SIZE -1 ) / BLOCK_SIZE;
-    for(int i=0; i< nb_blocks; i++){
-        int bit_map_index = inode->blocks[i];
-        FileSystem *fs= &fs_metadata;
-        fs->free_blocks[bit_map_index] = 0;
-    }
-    // we have to save the fs_metadata after and store it in the disk
-}
-
-
-
 
 
 /**

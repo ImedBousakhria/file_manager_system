@@ -8,6 +8,8 @@
 
 // Global variable for filesystem metadata
 FileSystem fs_metadata;
+extern char current_working_directory[MAX_PATH_LENGTH] = "/"; 
+extern int cwd_index = 0;
 
 /**
  * Saves the current filesystem state to disk.

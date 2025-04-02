@@ -15,7 +15,6 @@ FILE *disk_file;
  */
 int disk_init() {
     disk_file = fopen(DISK_FILE_NAME, "rb+");
-    printf("Hello");
     if (!disk_file) {
         printf("Creating new disk...\n");
 

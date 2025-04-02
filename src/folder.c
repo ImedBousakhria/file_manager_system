@@ -66,6 +66,7 @@ void create_directory(const char *dirname, const char* parent_path, int user_ind
     entry->inode_index = index;
     entry->isfile = 0; // Mark as a directory
 
+    save_file_system();
     printf("Directory '%s' created successfully in directory path: '%s'.\n", dirname, parent_path);
 }
 
@@ -123,7 +124,8 @@ void delete_dir(int dir_index){
             delete_dir(entry.inode_index);  // Only call for directories
         }
     }
-    // save the file system in the disk 
+    // save the file system in the disk
+    save_file_system();
 
 }
 

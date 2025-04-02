@@ -7,11 +7,15 @@
 #include "utils.h"
 
 int main () {
-    printf("Hello m1");
     disk_init();
-    printf("Hello main2");
     // mount_fs();
-    
 
-    return EXIT_SUCCESS;
+    // int file_inode1 = create_file("imed_test6.txt", "/", 1);
+    // printf("%d", file_inode1);
+    write_to_file("/", "imed_test6.txt", "Hello world");
+    char buf[20] = {0};
+    read_from_file("/", "imed_test6.txt", buf, 20);
+    buf[19] = '\0';
+    printf("%s", buf);
+    return 0;
 }
