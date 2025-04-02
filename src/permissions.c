@@ -4,22 +4,22 @@
 #include "fs.h"
 
 
-// Initialisation des utilisateurs
-// Cette fonction est appelée lors de l'initialisation du système de fichiers
+// User initialization
+// This function is called during filesystem initialization
 void init_users() {
-    // Initialiser les 3 utilisateurs prédéfinis
+    // Initialize the 3 predefined users
     
-    // Dyhia - admin (groupe 0)
+    // Dyhia - admin (group 0)
     User* dyhia = &fs_metadata.users[0];
     dyhia->name = "dyhia";
     dyhia->groupe = GROUP_ADMIN;
     
-    // Feryel - admin (groupe 0)
+    // Feryel - admin (group 0)
     User* feryel = &fs_metadata.users[1];
     feryel->name = "feryel";
     feryel->groupe = GROUP_ADMIN;
     
-    // Imad - utilisateur standard (groupe 1)
+    // Imad - standard user (group 1)
     User* imad = &fs_metadata.users[2];
     imad->name = "imad";
     imad->groupe = GROUP_USER;
@@ -27,135 +27,135 @@ void init_users() {
 
 
 
-// Trouver un utilisateur par son nom
+// Find a user by their name
 int find_user_by_name(const char* username) {
     for (int i = 0; i < 3; i++) {
         if (strcmp(fs_metadata.users[i].name, username) == 0) {
             return i;
         }
     }
-    return -1;  // Utilisateur non trouvé
+    return -1;  // User not found
 }
 
-// Vérifier si l'utilisateur est dans un groupe spécifique
+// Check if the user is in a specific group
 int is_in_group(const char* username, int group_id) {
     int user_idx = find_user_by_name(username);
     if (user_idx == -1) {
-        return 0;  // Utilisateur non trouvé
+        return 0;  // User not found
     }
     
     return fs_metadata.users[user_idx].groupe == group_id;
 }
 
-// Vérifier si l'utilisateur est le propriétaire d'un inode
+// Check if the user is the owner of an inode
 int is_owner(const char* username, int inode_idx) {
     if (inode_idx < 0 || inode_idx >= fs_metadata.nb_inodes || !fs_metadata.inodes[inode_idx].used) {
-        return 0;  // Inode invalide
+        return 0;  // Invalid inode
     }
     
     int user_idx = find_user_by_name(username);
     if (user_idx == -1) {
-        return 0;  // Utilisateur non trouvé
+        return 0;  // User not found
     }
     
     return fs_metadata.inodes[inode_idx].owner_indx == user_idx;
 }
 
-// Vérifier si un utilisateur a une permission spécifique sur un inode
+// Check if a user has a specific permission on an inode
 
-// permission type : for exemple i have defined 3 variables in permissions.h , if i want to check permission read i need to type in 4 
+// permission type: for example I have defined 3 variables in permissions.h, if I want to check read permission I need to type in 4 
 int check_permission(const char* username, int inode_idx, int permission_type) {
-    // Vérifier si l'inode existe et est utilisé
+    // Check if the inode exists and is in use
     if (inode_idx < 0 || inode_idx >= fs_metadata.nb_inodes || !fs_metadata.inodes[inode_idx].used) {
-        printf("Erreur: Inode invalide ou inutilisé.\n");
+        printf("Error: Invalid or unused inode.\n");
         return 0;
     }
     
-    // Trouver l'utilisateur
+    // Find the user
     int user_idx = find_user_by_name(username);
     if (user_idx == -1) {
-        printf("Erreur: Utilisateur '%s' non trouvé.\n", username);
+        printf("Error: User '%s' not found.\n", username);
         return 0;
     }
     
-    // Les administrateurs (groupe 0) ont toutes les permissions
+    // Administrators (group 0) have all permissions
     if (fs_metadata.users[user_idx].groupe == GROUP_ADMIN) {
         return 1;
     }
     
-    // Récupérer les permissions de l'inode
+    // Get the inode permissions
     int perms = fs_metadata.inodes[inode_idx].permissions;
     
-    // Vérifier si l'utilisateur est le propriétaire
+    // Check if the user is the owner
     if (fs_metadata.inodes[inode_idx].owner_indx == user_idx) {
-        // Vérifier les permissions du propriétaire (bits 6-8)
+        // Check owner permissions (bits 6-8)
         return ((perms >> 6) & 0x7 & permission_type) == permission_type;
     }
     
-    // Vérifier si l'utilisateur est dans le même groupe que le propriétaire
+    // Check if the user is in the same group as the owner
 
     if (fs_metadata.users[user_idx].groupe == GROUP_USER) {
-        // Vérifier les permissions de groupe (bits 3-5)
+        // Check group permissions (bits 3-5)
         return ((perms >> 3) & 0x7 & permission_type) == permission_type;
     }
     
-    // Sinon, vérifier les permissions pour les autres (bits 0-2)
+    // Otherwise, check permissions for others (bits 0-2)
     return (perms & 0x7 & permission_type) == permission_type;
 }
 
-// Vérifier si un utilisateur peut lire un fichier
+// Check if a user can read a file
 int user_can_read(const char* username, int inode_idx) {
     return check_permission(username, inode_idx, PERM_READ);
 }
 
-// Vérifier si un utilisateur peut écrire dans un fichier
+// Check if a user can write to a file
 int user_can_write(const char* username, int inode_idx) {
     return check_permission(username, inode_idx, PERM_WRITE);
 }
 
-// Vérifier si un utilisateur peut exécuter un fichier
+// Check if a user can execute a file
 int user_can_execute(const char* username, int inode_idx) {
     return check_permission(username, inode_idx, PERM_EXECUTE);
 }
 
 
-// Fonction pour modifier les permissions d'un fichier (équivalent de chmod)
+// Function to modify file permissions (equivalent to chmod)
 int chmod_file(const char* username, int inode_idx, int new_permissions) {
-    // Vérifier si l'inode existe et est utilisé
+    // Check if the inode exists and is in use
     if (inode_idx < 0 || inode_idx >= fs_metadata.nb_inodes || !fs_metadata.inodes[inode_idx].used) {
-        printf("Erreur: Inode invalide ou inutilisé.\n");
+        printf("Error: Invalid or unused inode.\n");
         return 0;
     }
     
-    // Trouver l'utilisateur
+    // Find the user
     int user_idx = find_user_by_name(username);
     if (user_idx == -1) {
-        printf("Erreur: Utilisateur '%s' non trouvé.\n", username);
+        printf("Error: User '%s' not found.\n", username);
         return 0;
     }
     
-    // Seul le propriétaire ou un administrateur peut modifier les permissions
+    // Only the owner or an administrator can modify permissions
     if (fs_metadata.users[user_idx].groupe == GROUP_ADMIN ||  fs_metadata.inodes[inode_idx].owner_indx == user_idx) {
         
-        // Vérifier que les permissions sont valides (entre 0 et 0777)
+        // Check that the permissions are valid (between 0 and 0777)
         if (new_permissions < 0 || new_permissions > 0777) {
-            printf("Erreur: Valeur de permission invalide.\n");
+            printf("Error: Invalid permission value.\n");
             return 0;
         }
         
         fs_metadata.inodes[inode_idx].permissions = new_permissions;
-        printf("Permissions de l'inode %d modifiées à ", inode_idx);
+        printf("Permissions for inode %d modified to ", inode_idx);
         print_permissions(new_permissions);
         return 1;
     } else {
-        printf("Erreur: Permission refusée. Seul le propriétaire ou un administrateur peut modifier les permissions.\n");
+        printf("Error: Permission denied. Only the owner or an administrator can modify permissions.\n");
         return 0;
     }
 }
 
-// Fonction auxiliaire pour afficher les permissions en format lisible
+// Helper function to display permissions in readable format
 void print_permissions(int permissions) {
-    // Convertir permissions octales en format rwx
+    // Convert octal permissions to rwx format
     char perm_str[10] = "---------";
     
     // Owner permissions (bits 6-8)
