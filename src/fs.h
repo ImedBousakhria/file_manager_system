@@ -12,8 +12,8 @@
 #define MAX_DIR 15 // max directories in our fs
 
 #define MAX_PATH_LENGTH 256  // path length used in cwd
-char current_working_directory[MAX_PATH_LENGTH] = "/"; 
-int cwd_index = 0;
+extern char current_working_directory[MAX_PATH_LENGTH]; 
+extern int cwd_index;
 
 typedef struct {
     int isfile;
