@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <disk.h>
+#include "disk.h"
 
 
 int entry_exists(char *name, int dir_index, int isfile);

@@ -6,8 +6,12 @@
 #include "permissions.h"
 #include "utils.h"
 
-int main (int argc, char *argv[]) {
+int main () {
+    printf("Hello m1");
+    disk_init();
+    printf("Hello main2");
+    // mount_fs();
+    
 
-        
     return EXIT_SUCCESS;
 }

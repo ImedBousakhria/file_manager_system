@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <disk.h>
+#include "disk.h"
 
 #define MAX_NAME_LENGTH 32
 #define NUM_BLOCKS 1024  // Adjust as needed

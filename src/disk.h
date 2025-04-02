@@ -9,9 +9,8 @@
 #define DISK_NAME "fs_vdisk.img"
 
 int disk_init();
-int disk_read(int block_num, void *buf);
-int disk_write(int block_num, const void *buf); 
-void disk_format();  
-
+// int disk_read(int block_num, void *buf);
+// int disk_write(int block_num, const void *buf); 
+// void disk_format();  
 
 #endif
