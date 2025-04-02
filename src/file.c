@@ -252,8 +252,9 @@ void seek_to_location(FILE *disk_file, int block_idx, int offset_in_block) {
     fseek(disk_file, block_idx * BLOCK_SIZE + offset_in_block, SEEK_SET);
 }
 
-
+/* Reading files by block */
 void read_from_file(const char *parent_path, const char *filename, char *buffer, int buffer_size) {
+    
     // Find the directory index from provided path
     int parent_inode_idx = find_directory_index(parent_path);
     if (parent_inode_idx == -1) {
