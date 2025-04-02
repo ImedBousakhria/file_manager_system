@@ -56,5 +56,9 @@ typedef struct {
 extern FileSystem fs_metadata;
 
 void save_file_system();
+int load_file_system();
+void init_fs();
+void mount_fs();
+int disk_init();
 
 #endif
