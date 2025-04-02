@@ -15,7 +15,6 @@
 extern char current_working_directory[MAX_PATH_LENGTH]; 
 extern int cwd_index;
 
-
 typedef struct {
     int isfile;
     char name[MAX_NAME_LENGTH];  // File/Directory name
