@@ -13,9 +13,8 @@ FILE *disk_file;
  * - If it doesn't exist, creates the disk and initializes the filesystem.
  * Returns 0 on success, -1 on failure.
  */
-int disk_init() {
+int disk_init(){
     disk_file = fopen(DISK_FILE_NAME, "rb+");
-    printf("Hello");
     if (!disk_file) {
         printf("Creating new disk...\n");
 

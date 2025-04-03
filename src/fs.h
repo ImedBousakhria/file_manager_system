@@ -60,5 +60,6 @@ int load_file_system();
 void init_fs();
 void mount_fs();
 int disk_init();
+void list_all_from_root();
 
 #endif

@@ -3,7 +3,6 @@
 #include <string.h>
 #include "fs.h"
 #include "disk.h"
-// Function to find a free inode
 
 
 
@@ -62,8 +61,10 @@ int create_file(const char *filename, char* parent_path, int user_index) {
     strcpy(entry->name, filename);
     entry->inode_index = new_inode_idx;
     entry->isfile = 1; // Mark as file
-
+    save_file_system();
     printf("File '%s' created successfully in directory :  '%s' .\n", filename, parent_path);
+    
+
     return new_inode_idx;
 }
 
@@ -141,6 +142,7 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
         int writable_size = (remaining_size < (BLOCK_SIZE - offset_in_last_block)) ? remaining_size : (BLOCK_SIZE - offset_in_last_block);
         fwrite(data + data_offset, 1, writable_size, disk_file);
 
+
         // update counters
         remaining_size -= writable_size;
         data_offset += writable_size;
@@ -204,7 +206,7 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
 
     for (int i = 0; i < 30 && bytes_read < buffer_size; i++) {
         block_idx = file_inode->blocks[i];
-        if (block_idx == 0) {
+        if (block_idx == -1) {
             break; // No more blocks, exit
         }
 
@@ -213,7 +215,11 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
 
         // Read data from the block into the buffer
         int read_size = (buffer_size - bytes_read < BLOCK_SIZE) ? buffer_size - bytes_read : BLOCK_SIZE;
+        printf("what to read: \t%d", read_size);
         fread(buffer + bytes_read, 1, read_size, disk_file);
+        printf("trying to print buf from read func  %s", buffer);
+
+
         
         bytes_read += read_size;
         offset_in_block = 0; // no offset needed for next new blocks
@@ -230,32 +236,26 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
 }
 
 
-// utility function that builds paths up to root
-void get_full_path_from_index(int dir_index, char *output_path) {
-    char temp_path[MAX_PATH_LENGTH] = "";
-    char stack[15][MAX_NAME_LENGTH]; // Stack to store path parts
-    int stack_top = 0;
 
-    while (dir_index != 0) {  // Stop when reaching root
-        Directory *dir = &fs_metadata.directories[dir_index];
 
-        // Push directory name onto the stack
-        strncpy(stack[stack_top], dir->entries[0].name, MAX_NAME_LENGTH);
-        stack_top++;
-
-        // Move to parent directory
-        dir_index = dir->parent_index;
+/*
+ *    change the used to 0 
+ *    go back to the dir and delete it from an entry with delete_entry(int index_entry)
+ *    free blocks when deleting files: the bitmaps = 0   
+*/
+void delete_inode(int inode_index){
+    Inode *inode = &fs_metadata.inodes[inode_index];
+    inode->used = 0;
+    // remove from parent directory
+    int parent_index = inode->parent_index;
+    delete_entry(inode_index, parent_index, 1);
+    //we have to change the bitmaps in the blocks
+    int nb_blocks = ((inode->size) + BLOCK_SIZE -1 ) / BLOCK_SIZE;
+    for(int i=0; i< nb_blocks; i++){
+        int bit_map_index = inode->blocks[i];
+        FileSystem *fs= &fs_metadata;
+        fs->free_blocks[bit_map_index] = 0;
     }
-
-    // Build the final path from stack
-    strcat(temp_path, "/");
-    for (int i = stack_top - 1; i >= 0; i--) {
-        strcat(temp_path, stack[i]);
-        if (i > 0) strcat(temp_path, "/"); // Add slashes between directories
-    }
-
-    // Copy to output
-    strncpy(output_path, temp_path, MAX_PATH_LENGTH);
+    // we have to save the fs_metadata after and store it in the disk
+    save_file_system();
 }
-
-

@@ -160,3 +160,28 @@ void print_all_dir(){
         }
     }
 }
+void list_all_from_root() {
+    printf("/\n");
+    traverse_directory(0, 1);  // Start traversal (root is at index 0)
+}
+
+
+void traverse_directory(int dir_index, int depth) {
+    Directory *dir = &fs_metadata.directories[dir_index];
+
+    for (int i = 2; i < dir->num_entries; i++) {
+        DirectoryEntry *entry = &dir->entries[i];
+
+        // identation for better visuals
+        for (int j = 0; j < depth; j++) {
+            printf("-----");
+        }
+
+        if (entry->isfile) {
+            printf("[FILE] %s\n", entry->name);
+        } else {
+            printf("[DIR]  %s/\n", entry->name);
+            traverse_directory(entry->inode_index, depth + 1);  // Recurse into the children
+        }
+    }
+}
