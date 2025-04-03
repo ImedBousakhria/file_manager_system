@@ -43,7 +43,7 @@ int create_file(const char *filename, char* parent_path, int user_index) {
 
     // if we created a new one and we didn't overwrite a non used inode
     int n_inodes = fs_metadata.nb_inodes;
-    if( new_inode_idx == (n_inodes +1)){
+    if( new_inode_idx == n_inodes ){
         // update the nb_inodes
         FileSystem *fs =  &fs_metadata;
         fs->nb_inodes = n_inodes + 1;

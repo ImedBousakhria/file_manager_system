@@ -8,7 +8,8 @@
 
 // Global variable for filesystem metadata
 FileSystem fs_metadata;
-
+extern char current_working_directory[MAX_PATH_LENGTH] = "/"; 
+extern int cwd_index = 0;
 /**
  * Saves the current filesystem state to disk.
  */
@@ -124,5 +125,38 @@ void mount_fs() {
     if (!load_file_system()) {
         printf("Creating new file system...\n");
         init_fs();
+    }
+}
+
+
+/**
+ * for debugging
+ * print the inodes in the table of inodes in the filesystem structor 
+ */
+
+void print_all_inodes(){
+    for(int i=0; i < fs_metadata.nb_inodes; i++){
+        Inode inode = fs_metadata.inodes[i];
+        printf("inode identifier : %d \n", i);
+        printf("parent index : %d \n", inode.parent_index);
+        printf("used or not : %d \n", inode.used);
+    }
+} 
+/**
+ * for debugging 
+ * print the directories in the table of directories 
+ */
+void print_all_dir(){
+    for(int i=0; i < fs_metadata.nb_directories; i++){
+        Directory dir = fs_metadata.directories[i];
+        printf("the dir identifier : %d \n", i);
+        printf("num_entries : %d \n", dir.num_entries);
+        printf("the entries : \n");
+        for(int i=0; i< dir.num_entries; i++){
+            DirectoryEntry entry = dir.entries[i];
+            printf("entry index: %d \n", entry.inode_index);
+            printf("the entry type : %d \n", entry.isfile);
+            printf("name of entry : %s \n", entry.name);
+        }
     }
 }

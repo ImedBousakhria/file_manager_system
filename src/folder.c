@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "fs.h"
-
+#include "utils.h"
 
 
 
@@ -47,7 +47,7 @@ void create_directory(const char *dirname, const char* parent_path, int user_ind
     DirectoryEntry self_entry;
     self_entry.isfile = 0;
     self_entry.inode_index = index;
-    strcpy(self_entry.name, ".");
+    strcpy(self_entry.name, dirname);
 
     DirectoryEntry parent_entry;
     parent_entry.isfile = 0;
@@ -74,8 +74,13 @@ void create_directory(const char *dirname, const char* parent_path, int user_ind
  * here we get the last dir if it exist if not just make the num_directories-1 we keep the root
  * we recursivelly delete everything under it 
  */
-void delete_dir(int dir_index){
+void delete_dir(const char *path){
 
+    int dir_index = find_directory_index(path);
+    if(dir_index < 0){
+        printf("Error: path doesn't exist");
+        return;
+    }
     //before deleting a dir we have to make sure it's not the root
     if(dir_index == 0){
         printf("Error: You can't delete the root directory");
@@ -114,8 +119,8 @@ void delete_dir(int dir_index){
 
         // skip "." and ".." entries to prevent infinite recursion
 
-        if(strcmp(entry.name, ".") == 0 || strcmp(entry.name, "..") == 0) {
-        continue;
+        if( i == 0 || i == 1) {
+            continue;
         }
         if(entry.isfile){
             delete_inode(entry.inode_index);
