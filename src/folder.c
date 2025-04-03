@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "fs.h"
+#include "utils.h"
 
 
 
@@ -11,7 +12,7 @@
 void create_directory(const char *dirname, const char* parent_path, int user_index, int permission) {
     // Get out if parent_path does not exist
     int dir_idx = find_directory_index(parent_path);
-
+    
     if (dir_idx == -1) {
         printf("Error: Directory path not found.\n");
         return;
@@ -39,6 +40,7 @@ void create_directory(const char *dirname, const char* parent_path, int user_ind
 
     // Initialize the new directory at the last available index
     int index = fs_metadata.nb_directories;
+    
     Directory *new_dir = &fs_metadata.directories[index];
     new_dir->parent_index = dir_idx;
     new_dir->num_entries = 0;
@@ -58,8 +60,9 @@ void create_directory(const char *dirname, const char* parent_path, int user_ind
     new_dir->entries[new_dir->num_entries++] = parent_entry;
 
     // Increase the number of directories
-    fs_metadata.nb_directories++;
-
+    FileSystem *fs = &fs_metadata;
+    fs->nb_directories++;
+    printf("the index of the dir is %d", fs->nb_directories);
     // Add the new directory entry to the parent directory
     DirectoryEntry *entry = &parent_directory->entries[parent_directory->num_entries++];
     strcpy(entry->name, dirname);
@@ -80,6 +83,11 @@ void delete_dir(int dir_index){
     //before deleting a dir we have to make sure it's not the root
     if(dir_index == 0){
         printf("Error: You can't delete the root directory");
+        return;
+    }
+
+    if(dir_index < 1){
+        printf("Error: Inode doesn't exist");
         return;
     }
 

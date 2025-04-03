@@ -3,7 +3,6 @@
 #include <string.h>
 #include "fs.h"
 #include "disk.h"
-// Function to find a free inode
 
 
 
@@ -143,6 +142,7 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
         int writable_size = (remaining_size < (BLOCK_SIZE - offset_in_last_block)) ? remaining_size : (BLOCK_SIZE - offset_in_last_block);
         fwrite(data + data_offset, 1, writable_size, disk_file);
 
+
         // update counters
         remaining_size -= writable_size;
         data_offset += writable_size;
@@ -204,7 +204,7 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
         return;
     }
 
-    for (int i = 0; bytes_read < buffer_size; i++) {
+    for (int i = 0; i < 30 && bytes_read < buffer_size; i++) {
         block_idx = file_inode->blocks[i];
         if (block_idx == -1) {
             break; // No more blocks, exit
@@ -215,8 +215,10 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
 
         // Read data from the block into the buffer
         int read_size = (buffer_size - bytes_read < BLOCK_SIZE) ? buffer_size - bytes_read : BLOCK_SIZE;
+        printf("what to read: \t%d", read_size);
         fread(buffer + bytes_read, 1, read_size, disk_file);
         printf("trying to print buf from read func  %s", buffer);
+
 
         
         bytes_read += read_size;
@@ -234,33 +236,6 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
 }
 
 
-// utility function that builds paths up to root
-void get_full_path_from_index(int dir_index, char *output_path) {
-    char temp_path[MAX_PATH_LENGTH] = "";
-    char stack[15][MAX_NAME_LENGTH]; // Stack to store path parts
-    int stack_top = 0;
-
-    while (dir_index != 0) {  // Stop when reaching root
-        Directory *dir = &fs_metadata.directories[dir_index];
-
-        // Push directory name onto the stack
-        strncpy(stack[stack_top], dir->entries[0].name, MAX_NAME_LENGTH);
-        stack_top++;
-
-        // Move to parent directory
-        dir_index = dir->parent_index;
-    }
-
-    // Build the final path from stack
-    strcat(temp_path, "/");
-    for (int i = stack_top - 1; i >= 0; i--) {
-        strcat(temp_path, stack[i]);
-        if (i > 0) strcat(temp_path, "/"); // Add slashes between directories
-    }
-
-    // Copy to output
-    strncpy(output_path, temp_path, MAX_PATH_LENGTH);
-}
 
 
 /*
