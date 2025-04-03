@@ -122,7 +122,6 @@ void delete_dir(int dir_index){
         DirectoryEntry entry = copy_dir.entries[i];
 
         // skip "." and ".." entries to prevent infinite recursion
-
         if(strcmp(entry.name, ".") == 0 || strcmp(entry.name, "..") == 0) {
         continue;
         }
@@ -144,49 +143,62 @@ const char* getcwd() {
 
 // change cwd in 2 cases: absolute / relative path was given
 int chdir(const char *path) {
-    char new_path[MAX_PATH_LENGTH];
-
-    if(!find_directory_index(path)) {
-        // not a valid path in the tree
-        return -1;
+    if (!path || strlen(path) == 0) {
+        return -1;  // Invalid path
     }
-    else {
-        if (path[0] == '/'){
-            strncpy(current_working_directory, path, MAX_PATH_LENGTH);
-        }
-        else{
-            
-            char *path_copy = strdup(new_path);
-            char *token = strtok(path_copy, "/");
 
-            int current_dir_index = (path[0] == '/') ? 0 : cwd_index;
+    if (path[0] == '/') {
+        // Absolute path
+        int new_index = find_directory_index(path);
+        if (new_index == -1) return -1;
+        cwd_index = new_index;
+        strncpy(current_working_directory, path, MAX_PATH_LENGTH);
+        return 0;
+    }
 
-            while (token) {
-                if (strcmp(token, "..") == 0) {
-                    if (current_dir_index != 0) {
-                        current_dir_index = fs_metadata.directories[current_dir_index].parent_index;
-                    }
-                } else if (strcmp(token, ".") != 0) {
-                    // Move into the directory if valid
-                    // I might need a loop actually
-                    int next_index = find_directory_index(token);
-                    if (next_index == -1) {
-                        printf("Error: Directory '%s' not found.\n", token);
-                        free(path_copy);
-                        return -1;
-                    }
-                    current_dir_index = next_index;
-                }
-        
-                token = strtok(NULL, "/");
+    // Relative path handling
+    char *path_copy = strdup(path);
+    char *token = strtok(path_copy, "/");
+    int current_dir_index = cwd_index;  // Start from current directory
+
+    while (token) {
+        if (strcmp(token, "..") == 0) {
+            // Move to parent directory (if not root)
+            if (current_dir_index != 0) {
+                current_dir_index = fs_metadata.directories[current_dir_index].parent_index;
             }
-            free(path_copy);
-            char *final_path;
-            get_full_path_from_index(current_dir_index, final_path);
-            strncpy(current_working_directory, final_path, MAX_PATH_LENGTH);
-            cwd_index = current_dir_index;
-        
-            return 0;
+        } else if (strcmp(token, ".") != 0) {
+            // Move into subdirectory
+            int found = -1;
+            Directory *current_dir = &fs_metadata.directories[current_dir_index];
+
+            for (int i = 0; i < current_dir->num_entries; i++) {
+                if (!current_dir->entries[i].isfile && strcmp(current_dir->entries[i].name, token) == 0) {
+                    found = current_dir->entries[i].inode_index;
+                    break;
+                }
+            }
+
+            if (found == -1) {
+                printf("Error: Directory '%s' not found in '%s'.\n", token, current_working_directory);
+                free(path_copy);
+                return -1;
+            }
+
+            current_dir_index = found;
         }
+
+        token = strtok(NULL, "/");
     }
+    free(path_copy);
+
+    // Get full absolute path
+    char final_path[MAX_PATH_LENGTH];
+    get_full_path_from_index(current_dir_index, final_path);
+
+    // Update cwd
+    strncpy(current_working_directory, final_path, MAX_PATH_LENGTH);
+    cwd_index = current_dir_index;
+
+    return 0;
 }
