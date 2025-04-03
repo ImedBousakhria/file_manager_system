@@ -52,4 +52,8 @@ Mkfile.old
 dkms.conf
 
 .vscode
-fs_vdisk.img
+./src/fs_vdisk.img
+bin
+build
+obj
+-p

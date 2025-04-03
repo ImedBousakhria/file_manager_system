@@ -25,7 +25,7 @@ int main () {
     // create_directory("dir2", "/dir1", 1, 777);
     chdir("/dir1/dir2");
     printf("%s\n", getcwd());
-    chdir("");
+    chdir("../..");
     printf("%s", getcwd());
     list_all_from_root();
     return 0;
