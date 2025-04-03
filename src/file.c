@@ -3,12 +3,13 @@
 #include <string.h>
 #include "fs.h"
 #include "disk.h"
+#include "permissions.h"
 
 
 
 
 // for now the user is an int 
-int create_file(const char *filename, char* parent_path, int user_index) {
+int create_file(const char *filename, char* parent_path, int user_index, int permissions) {
     
     // get out if parent_path does not exist 
     int dir_idx = find_directory_index(parent_path);
@@ -52,7 +53,7 @@ int create_file(const char *filename, char* parent_path, int user_index) {
     Inode *new_inode = &fs_metadata.inodes[new_inode_idx];
     new_inode->used = 1;
     new_inode->size = 0;
-    new_inode->permissions = 777;
+    new_inode->permissions = permissions;
     new_inode->owner_indx = user_index;
     new_inode->parent_index = dir_idx; // Set parent directory
 
@@ -70,7 +71,7 @@ int create_file(const char *filename, char* parent_path, int user_index) {
 
 
 /* Changing the actual content of a file aka writing in the last spot */
-void write_to_file(const char *parent_path, const char *filename, const char *data){
+void write_to_file(const char *parent_path, const char *filename, const char *data, int user_index){
     // find the directory index from provided path
     int parent_inode_idx = find_directory_index(parent_path);
     int file_inode_idx;
@@ -82,7 +83,7 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
     // check if file exists in the path, if not, create it
     if(!entry_exists(filename, parent_inode_idx, 1)){
         printf("File does not exist");
-        file_inode_idx = create_file(filename, parent_path, 1);
+        file_inode_idx = create_file(filename, parent_path, user_index, 777);
     }
     
 
@@ -104,6 +105,13 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
         return;
     }
 
+
+    int permit = check_permission(fs_metadata.users[user_index].name, file_inode_idx, 2);
+    if (permit != 1){
+        printf("User doesn't have the permissions to write in this file");
+        return;
+    }
+    
     // Actually writing 
     while (remaining_size > 0) {
         int block_idx = -1;
