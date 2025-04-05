@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include "disk.h"
 #include "file.h"
 #include "fs.h"
@@ -32,7 +32,8 @@ void display_help() {
 int main(int argc, char *argv[]) {
     // Initialize the file system
     disk_init();
-    
+    printf("hehehe");
+    move_file("/feryel/dir/text.text");
     // If no arguments are provided, show help
     if (argc < 2) {
         display_help();

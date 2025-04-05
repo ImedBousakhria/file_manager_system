@@ -4,6 +4,7 @@
 #include "fs.h"
 #include "disk.h"
 #include "permissions.h"
+#include "utils.h"
 
 
 
@@ -266,4 +267,64 @@ void delete_inode(int inode_index){
     }
     // we have to save the fs_metadata after and store it in the disk
     save_file_system();
+}
+
+
+/**
+ * move a file from a dir to another 
+ */
+
+void move_file(const char* path, const char* des_path) {
+    // deviding the path of the file to the parent path and the path 
+    char *lastSlash = strrchr(path, '/');
+    char *directory;
+    char *filename;
+    if (lastSlash != NULL) {
+        // Get filename
+        filename = lastSlash + 1;
+
+        // Temporarily cut the string to get the directory path
+        *lastSlash = '\0'; // Replace '/' with null character
+
+        directory = path;
+
+        printf("Directory: %s\n", directory);
+        printf("Filename: %s\n", filename);
+    } else {
+        printf("Error: No directory found in source path.\n");
+        return;
+    }
+
+    int parent_dir_index = find_directory_index(directory);
+    if(parent_dir_index == -1){
+        printf("Error: the source path is not found");
+        return;
+    }
+
+    int file_index = entry_exists(filename, parent_dir_index, 1);
+    if(file_index = -1){
+        printf("Error: the file is not found in the source path");
+        return;
+    }
+
+    // verify if the destination path is good if not no need to continue 
+
+    int dis_dir_index = find_directory_index(des_path);
+    if(dis_dir_index == -1){
+        printf("Error: the destination path is not found");
+        return;
+    }
+     // we add it as an entry to the new dir path 
+    int entry_index = add_entry(dis_dir_index, file_index, 1, filename);
+    if(entry_index == -1){
+        printf("Error: The distination Directory is full");
+        return;
+    }
+
+    Inode *inode = &fs_metadata.inodes[file_index];
+    // change the parent index in the inode
+    inode->parent_index = dis_dir_index;
+    
+    //in the parent dir we delete the entry of the file 
+    delete_entry(file_index, parent_dir_index, 1);
 }

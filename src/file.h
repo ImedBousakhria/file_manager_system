@@ -13,6 +13,6 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
 void seek_to_location(FILE *disk_file, int block_idx, int offset_in_block);
 void write_to_file(const char *parent_path, const char *filename, const char *data, int user_index);
 void delete_inode(int inode_index);
-
+void move_file(const char* path, const char* des_path);
 
 #endif

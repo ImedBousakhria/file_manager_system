@@ -207,3 +207,47 @@ int chdir(const char *path) {
 
     return 0;
 }
+
+/**
+ * moves a directory from a directory to another
+ */
+void move_directory(const char* path, const char* des_path){
+
+    int dir_index = find_directory_index(path);
+    if(dir_index == -1){
+        printf("Error: the source path is not found");
+        return;
+    }
+
+    int dir_index = find_directory_index(des_path);
+    if(dir_index == -1){
+        printf("Error: the destination path is not found");
+        return;
+    }
+    // we find the dir parent index and add
+    
+    char *lastSlash = strrchr(path, '/');
+    char *dirname;
+    if (lastSlash != NULL) {
+        // Get dirname
+        dirname = lastSlash + 1;
+    } else {
+        printf("Error: No directory found in source path.\n");
+        return;
+    }
+
+    int parent_index = fs_metadata.directories[dir_index].parent_index;
+    // we add it as an entry to the new dir path 
+    int entry_index = add_entry(parent_index, dir_index, 0, dirname);
+    if(entry_index == -1){
+        printf("Error: The distination Directory is full");
+        return;
+    }
+
+    Directory *dir = &fs_metadata.directories[dir_index];
+    // change the parent index in the inode
+    dir->parent_index = parent_index;
+    
+    //in the parent dir we delete the entry of the file 
+    delete_entry(dir_index, parent_index, 0);
+}

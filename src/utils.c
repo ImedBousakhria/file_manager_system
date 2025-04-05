@@ -147,3 +147,24 @@ void get_full_path_from_index(int dir_index, char *output_path) {
     // Copy to output
     strncpy(output_path, temp_path, MAX_PATH_LENGTH);
 }
+
+/**
+ * adding an entry to a directory
+ * type if file then 1
+ * returns the it's index in the entries table -1 if failed 
+ */
+int add_entry(int dir_index, int entry_index, int type, const char * name){
+    DirectoryEntry entry;
+    entry.inode_index = entry_index;
+    entry.isfile = type;
+    strcpy(entry.name, name);
+    Directory *dis_dir = &fs_metadata.directories[dir_index];
+    int num_entries = dis_dir->num_entries;
+    if(num_entries >= MAX_ENTRIES_PER_DIR){
+        return -1;
+    }
+    dis_dir->entries[num_entries] = entry;
+    dis_dir->num_entries = num_entries +1;
+    return num_entries;
+
+}
