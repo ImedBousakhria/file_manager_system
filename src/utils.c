@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include"utils.h"
 #include "fs.h"
 
 
@@ -86,6 +87,7 @@ void delete_entry(int inode_index, int parent_index, int type){
  * function that looks for the entry from the index in inodes/directories tables
  * and the dir parent index to find it's place in the entires 
  * returns the index in the entries 
+ * 
  */
 int find_index_entry(int index, int parent_index, int type){
     Directory dir_parent = fs_metadata.directories[parent_index];
