@@ -110,16 +110,16 @@ int entry_exists(const char *name, int dir_index, int isfile){
                 /*check if inode used of not, we might have a deleted file with the same name*/
                 Inode inode = fs_metadata.inodes[dir.entries[i].inode_index];
                 if(inode.used){
-                    return 1;
+                    return dir.entries[i].inode_index;
                 }
             }else{
-                return 1;
+                return dir.entries[i].inode_index;
             }
 
             
         }
     }
-    return 0;
+    return -1;
 }
 
 // utility function that builds paths up to root

@@ -3,7 +3,7 @@
 #include "fs.h"
 #include "utils.h"
 #include <string.h>
-
+#include "file.h"
 
 
 /**
@@ -19,7 +19,7 @@ void create_directory(const char *dirname, const char* parent_path, int user_ind
     }
 
     // Check if a directory with the same name exists in the parent dir
-    if (entry_exists(dirname, dir_idx, 0)) {
+    if (entry_exists(dirname, dir_idx, 0) > -1) {
         printf("Error: A directory with the same name already exists.\n");
         return;
     }
@@ -62,7 +62,7 @@ void create_directory(const char *dirname, const char* parent_path, int user_ind
     // Increase the number of directories
     FileSystem *fs = &fs_metadata;
     fs->nb_directories++;
-    printf("the index of the dir is %d", fs->nb_directories);
+    
     // Add the new directory entry to the parent directory
     DirectoryEntry *entry = &parent_directory->entries[parent_directory->num_entries++];
     strcpy(entry->name, dirname);
@@ -75,17 +75,43 @@ void create_directory(const char *dirname, const char* parent_path, int user_ind
 /**
  * delete dir with index
  */
-void delete_dir_index(int dir_index){
+void delete_dir_index(int dir_index, int user_index){
 
     Directory copy_dir = fs_metadata.directories[dir_index];
     FileSystem *fs = &fs_metadata;
     int parent_index = fs_metadata.directories[dir_index].parent_index;
+
+
+    // permissions 
+
+    int permit1 = check_permission(fs_metadata.users[user_index].name, parent_index, 1);
+    int permit2 = check_permission(fs_metadata.users[user_index].name, parent_index, 2);
+     
+    if ((!permit1) || (!permit2)){
+        printf("User doesn't have the permissions to delete this directory");
+        return;
+    }
+     // recursivlly delete everything under 
+    
+    for(int i=0; i< copy_dir.num_entries; i++){
+        DirectoryEntry entry = copy_dir.entries[i];
+
+        // skip "." and ".." entries to prevent infinite recursion
+
+        if( i == 0 || i == 1) {
+            continue;
+        }
+        if(entry.isfile){
+            delete_inode(entry.inode_index, user_index);
+        } else {
+            delete_dir_index(entry.inode_index, user_index);  // Only call for directories
+        }
+    }
     // delete the dir in it's parent entries
     delete_entry(dir_index, parent_index, 0);
     // check if it's the last in the table then just decrement the num_directories
     int num_dir = fs_metadata.nb_directories;
     if(dir_index < num_dir -1){
-        printf("we are not the last dir");
         Directory last_dir = fs_metadata.directories[num_dir -1];
         // replace the deleted directory with the last one
         fs->directories[dir_index]= last_dir;
@@ -106,23 +132,9 @@ void delete_dir_index(int dir_index){
      
     //decrementing the num_directories in the two cases
     fs->nb_directories = num_dir -1; 
-    // recursivlly delete everything under 
-    
-    for(int i=0; i< copy_dir.num_entries; i++){
-        DirectoryEntry entry = copy_dir.entries[i];
-
-        // skip "." and ".." entries to prevent infinite recursion
-
-        if( i == 0 || i == 1) {
-            continue;
-        }
-        if(entry.isfile){
-            delete_inode(entry.inode_index);
-        } else {
-            delete_dir_index(entry.inode_index);  // Only call for directories
-        }
-    }
+   
     // save the file system in the disk
+
     save_file_system();
 
 }
@@ -131,9 +143,10 @@ void delete_dir_index(int dir_index){
  * here we get the last dir if it exist if not just make the num_directories-1 we keep the root
  * we recursivelly delete everything under it 
  */
-void delete_dir(const char *path){
+void delete_dir(const char *path, int user_index){
 
     int dir_index = find_directory_index(path);
+    printf("the dir index is %d \n", dir_index);
     if(dir_index < 0){
         printf("Error: path doesn't exist");
         return;
@@ -149,9 +162,9 @@ void delete_dir(const char *path){
         return;
     }
 
-    
-    delete_dir_index(dir_index);
-
+   
+    delete_dir_index(dir_index, user_index);
+    printf("the directory in the path %s was successfully deleted", path);
 }
 
 
@@ -224,7 +237,7 @@ int chdir(const char *path) {
 /**
  * moves a directory from a directory to another
  */
-void move_directory(const char* path, const char* des_path){
+void move_directory(const char* path, const char* des_path, int user_index){
 
     int dir_index = find_directory_index(path);
     if(dir_index == -1){
@@ -232,8 +245,8 @@ void move_directory(const char* path, const char* des_path){
         return;
     }
 
-    int dir_index = find_directory_index(des_path);
-    if(dir_index == -1){
+    int dis_dir_index = find_directory_index(des_path);
+    if(dis_dir_index == -1){
         printf("Error: the destination path is not found");
         return;
     }
@@ -250,17 +263,29 @@ void move_directory(const char* path, const char* des_path){
     }
 
     int parent_index = fs_metadata.directories[dir_index].parent_index;
+    
     // we add it as an entry to the new dir path 
-    int entry_index = add_entry(parent_index, dir_index, 0, dirname);
+    int entry_index = add_entry(dis_dir_index, dir_index, 0, dirname);
     if(entry_index == -1){
         printf("Error: The distination Directory is full");
         return;
     }
 
+    int permit1 = check_permission(fs_metadata.users[user_index].name, parent_index, 1);
+    int permit2 = check_permission(fs_metadata.users[user_index].name, parent_index, 2);
+    int permit3 = check_permission(fs_metadata.users[user_index].name, dis_dir_index, 1);
+    int permit4 = check_permission(fs_metadata.users[user_index].name, dis_dir_index, 2);
+    
+    if ((!permit1) || (!permit2) || (!permit3) || (!permit4)){
+        printf("User doesn't have the permissions to move this directory");
+        return;
+    }
+
     Directory *dir = &fs_metadata.directories[dir_index];
     // change the parent index in the inode
-    dir->parent_index = parent_index;
+    dir->parent_index = dis_dir_index;
     
     //in the parent dir we delete the entry of the file 
     delete_entry(dir_index, parent_index, 0);
+    save_file_system();
 }

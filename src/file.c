@@ -5,7 +5,7 @@
 #include "disk.h"
 #include "permissions.h"
 #include "utils.h"
-
+#include "folder.h"
 
 
 
@@ -16,14 +16,14 @@ int create_file(const char *filename, char* parent_path, int user_index, int per
     int dir_idx = find_directory_index(parent_path);
     if (dir_idx == -1) {
         printf("Error: directory path not found.\n");
-        return;
+        return -1;
     }
     
     // check if there is a file with the same name in the dir 
 
-    if(entry_exists(filename, dir_idx, 1)){
+    if(entry_exists(filename, dir_idx, 1) > -1){
         printf("Error: a file with the same name already exists");
-        return;
+        return -1;
     }
 
     Directory *parent_directory = &fs_metadata.directories[dir_idx];
@@ -31,7 +31,7 @@ int create_file(const char *filename, char* parent_path, int user_index, int per
     // Check if there's space for a new entry in the directory
     if (parent_directory->num_entries >= MAX_ENTRIES_PER_DIR) {
         printf("Error: Directory is full.\n");
-        return;
+        return -1;
     }
 
     // Find a free inode for the new file
@@ -39,7 +39,7 @@ int create_file(const char *filename, char* parent_path, int user_index, int per
     //check for free inodes in the Inodes table in FileSystem 
     if (new_inode_idx == -1) {
         printf("Error: No free inodes available.\n");
-        return;
+        return -1;
     }
 
     // if we created a new one and we didn't overwrite a non used inode
@@ -67,7 +67,7 @@ int create_file(const char *filename, char* parent_path, int user_index, int per
     entry->inode_index = new_inode_idx;
     entry->isfile = 1; // Mark as file
     save_file_system();
-    printf("File '%s' created successfully in directory :  '%s' .\n", filename, parent_path);
+   printf("File '%s' created successfully in directory :  '%s' .\n", filename, parent_path);
     
 
     return new_inode_idx;
@@ -85,7 +85,7 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
     }
 
     // check if file exists in the path, if not, create it
-    if(!entry_exists(filename, parent_inode_idx, 1)){
+    if(entry_exists(filename, parent_inode_idx, 1) == -1){
         printf("File does not exist");
         file_inode_idx = create_file(filename, parent_path, user_index, 777);
     }
@@ -103,7 +103,7 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
     int remaining_size = size;
     int data_offset = 0;
 
-    FILE *disk_file = fopen("fs_vdisk.img", "r+b");
+    FILE *disk_file = fopen("fs_vdisk2.img", "r+b");
     if (!disk_file) {
         printf("Error: Could not open disk file.\n");
         return;
@@ -180,7 +180,7 @@ void seek_to_location(FILE *disk_file, int block_idx, int offset_in_block) {
 }
 
 /* Reading files by block */
-void read_from_file(const char *parent_path, const char *filename, char *buffer, int buffer_size) {
+void read_from_file(const char *parent_path, const char *filename, char *buffer, int buffer_size, int user_index) {
     
     // Find the directory index from provided path
     int parent_inode_idx = find_directory_index(parent_path);
@@ -203,6 +203,11 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
         printf("File does not exist\n");
         return;
     }
+    int permit = check_permission(fs_metadata.users[user_index].name, file_inode_idx, 4);
+    if (permit != 1){
+        printf("User doesn't have the permissions to read from this file");
+        return;
+    }
 
     Inode *file_inode = &fs_metadata.inodes[file_inode_idx];
 
@@ -211,7 +216,7 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
     int block_idx;
     int offset_in_block = file_inode->size % BLOCK_SIZE;
 
-    FILE *disk_file = fopen("fs_vdisk.img", "rb");
+    FILE *disk_file = fopen("fs_vdisk2.img", "rb");
     if (!disk_file) {
         printf("Error: Could not open disk file.\n");
         return;
@@ -254,7 +259,7 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
 
 
 
-char* read_full_file(const char *parent_path, const char *filename) {
+char* read_full_file(const char *parent_path, const char *filename, int user_index) {
     int parent_inode_idx = find_directory_index(parent_path);
     if (parent_inode_idx == -1) {
         printf("Error: Invalid path\n");
@@ -276,7 +281,13 @@ char* read_full_file(const char *parent_path, const char *filename) {
         printf("Error: File not found\n");
         return NULL;
     }
-    printf("file inode idx is %d\n", file_inode_idx);
+
+    int permit = check_permission(fs_metadata.users[user_index].name, file_inode_idx, 4);
+    if (permit != 1){
+        printf("User doesn't have the permissions to read from this file");
+        return;
+    }
+   
 
     Inode *inode = &fs_metadata.inodes[file_inode_idx];
 
@@ -298,7 +309,7 @@ char* read_full_file(const char *parent_path, const char *filename) {
         return NULL;
     }
 
-    FILE *disk_file = fopen("fs_vdisk.img", "rb");
+    FILE *disk_file = fopen("fs_vdisk2.img", "rb");
 
     if (!disk_file) {
         printf("Error: Could not open disk\n");
@@ -333,12 +344,21 @@ char* read_full_file(const char *parent_path, const char *filename) {
  *    go back to the dir and delete it from an entry with delete_entry(int index_entry)
  *    free blocks when deleting files: the bitmaps = 0   
 */
-void delete_inode(int inode_index){
-    Inode *inode = &fs_metadata.inodes[inode_index];
-    inode->used = 0;
+void delete_inode(int inode_index, int user_index){
+    Inode *inode = &fs_metadata.inodes[inode_index]; 
     // remove from parent directory
     int parent_index = inode->parent_index;
+
+    int permit1 = check_permission(fs_metadata.users[user_index].name, parent_index, 1);
+    int permit2 = check_permission(fs_metadata.users[user_index].name, parent_index, 2);
+     
+    if ((!permit1) || (!permit2)){
+        printf("User doesn't have the permissions to move this directory");
+        return; 
+    }
+
     delete_entry(inode_index, parent_index, 1);
+    inode->used = 0;
     //we have to change the bitmaps in the blocks
     int nb_blocks = ((inode->size) + BLOCK_SIZE -1 ) / BLOCK_SIZE;
     for(int i=0; i< nb_blocks; i++){
@@ -355,7 +375,7 @@ void delete_inode(int inode_index){
  * move a file from a dir to another 
  */
 
-void move_file(const char* path, const char* des_path) {
+void move_file(const char* path, const char* des_path, int user_index) {
     // deviding the path of the file to the parent path and the path 
     char *lastSlash = strrchr(path, '/');
     char *directory;
@@ -375,7 +395,6 @@ void move_file(const char* path, const char* des_path) {
         printf("Error: No directory found in source path.\n");
         return;
     }
-
     int parent_dir_index = find_directory_index(directory);
     if(parent_dir_index == -1){
         printf("Error: the source path is not found");
@@ -383,7 +402,7 @@ void move_file(const char* path, const char* des_path) {
     }
 
     int file_index = entry_exists(filename, parent_dir_index, 1);
-    if(file_index = -1){
+    if(file_index == -1){
         printf("Error: the file is not found in the source path");
         return;
     }
@@ -402,10 +421,26 @@ void move_file(const char* path, const char* des_path) {
         return;
     }
 
+
+
+    int permit1 = check_permission(fs_metadata.users[user_index].name, parent_dir_index, 1);
+    int permit2 = check_permission(fs_metadata.users[user_index].name, parent_dir_index, 2);
+    int permit3 = check_permission(fs_metadata.users[user_index].name, dis_dir_index, 1);
+    int permit4 = check_permission(fs_metadata.users[user_index].name, dis_dir_index, 2);
+
+    if ((!permit1) || (!permit2) || (!permit3) || (!permit4)){
+        printf("User doesn't have the permissions to move this directory");
+        return;
+    }
+
+
     Inode *inode = &fs_metadata.inodes[file_index];
     // change the parent index in the inode
     inode->parent_index = dis_dir_index;
     
+
     //in the parent dir we delete the entry of the file 
     delete_entry(file_index, parent_dir_index, 1);
+    // saving the file system
+    save_file_system();
 }

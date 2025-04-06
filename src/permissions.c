@@ -66,7 +66,7 @@ int is_owner(const char* username, int inode_idx) {
 // permission type: for example I have defined 3 variables in permissions.h, if I want to check read permission I need to type in 4 
 int check_permission(const char* username, int inode_idx, int permission_type) {
     // Check if the inode exists and is in use
-    if (inode_idx < 0 || inode_idx >= fs_metadata.nb_inodes || !fs_metadata.inodes[inode_idx].used) {
+    if (inode_idx < 0) {
         printf("Error: Invalid or unused inode.\n");
         return 0;
     }
