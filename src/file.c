@@ -327,9 +327,6 @@ char* read_full_file(const char *parent_path, const char *filename) {
     return buffer;
 }
 
-
-
-
 /*
  *    change the used to 0 
  *    go back to the dir and delete it from an entry with delete_entry(int index_entry)
@@ -351,3 +348,5 @@ void delete_inode(int inode_index){
     // we have to save the fs_metadata after and store it in the disk
     save_file_system();
 }
+
+

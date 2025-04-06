@@ -33,6 +33,9 @@ int main(int argc, char *argv[]) {
     // Initialize the file system
     disk_init();
     
+    // debuging 
+    //create_directory()
+
     // If no arguments are provided, show help
     if (argc < 2) {
         display_help();
@@ -115,14 +118,14 @@ int main(int argc, char *argv[]) {
         char *path = argv[2];
         
         if (chdir(path) == 0) {
-            printf("Changed directory to: %s\n", getcwd());
+            printf("Changed directory to: %s\n", getcurrentwd());
         } else {
             printf("Error changing directory to: %s\n", path);
         }
     }
     // Print current working directory: -p
     else if (strcmp(argv[1], "-p") == 0) {
-        printf("Current working directory: %s\n", getcwd());
+        printf("Current working directory: %s\n", gedtcurrentwd());
     }
     // List all from root: -l
     else if (strcmp(argv[1], "-l") == 0) {

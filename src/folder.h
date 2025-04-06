@@ -8,7 +8,8 @@
 
 void create_directory(const char *dirname, const char* parent_path, int user_index, int permission);
 int chdir(const char *path);
-const char* getcwd();
-void delete_dir(int dir_index);
+const char* getcurrentwd();
+void delete_dir(const char *path);
+void delete_dir_index(int dir_index);
 
 #endif

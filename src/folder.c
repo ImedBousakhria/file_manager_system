@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "fs.h"
 #include "utils.h"
+#include <string.h>
 
 
 
@@ -71,7 +72,60 @@ void create_directory(const char *dirname, const char* parent_path, int user_ind
     save_file_system();
     printf("Directory '%s' created successfully in directory path: '%s'.\n", dirname, parent_path);
 }
+/**
+ * delete dir with index
+ */
+void delete_dir_index(int dir_index){
 
+    Directory copy_dir = fs_metadata.directories[dir_index];
+    FileSystem *fs = &fs_metadata;
+    int parent_index = fs_metadata.directories[dir_index].parent_index;
+    // delete the dir in it's parent entries
+    delete_entry(dir_index, parent_index, 0);
+    // check if it's the last in the table then just decrement the num_directories
+    int num_dir = fs_metadata.nb_directories;
+    if(dir_index < num_dir -1){
+        printf("we are not the last dir");
+        Directory last_dir = fs_metadata.directories[num_dir -1];
+        // replace the deleted directory with the last one
+        fs->directories[dir_index]= last_dir;
+        // change the index of last dir in its dir parent
+        int parent_index = last_dir.parent_index;
+        
+        Directory *parent_last_index = &fs_metadata.directories[parent_index];
+
+        int entry_index = find_index_entry(num_dir -1, parent_index, 0);
+        if(entry_index == -1){
+           printf("Error: The Code is BAD !!! check if you're putting the values right in parent_index in DirectoryEntry, check if you're saving correctly");
+        }
+       // update the index of the last dir in his dir parent because we moved it 
+        parent_last_index->entries[entry_index].inode_index = dir_index;
+    }
+   
+     
+     
+    //decrementing the num_directories in the two cases
+    fs->nb_directories = num_dir -1; 
+    // recursivlly delete everything under 
+    
+    for(int i=0; i< copy_dir.num_entries; i++){
+        DirectoryEntry entry = copy_dir.entries[i];
+
+        // skip "." and ".." entries to prevent infinite recursion
+
+        if( i == 0 || i == 1) {
+            continue;
+        }
+        if(entry.isfile){
+            delete_inode(entry.inode_index);
+        } else {
+            delete_dir_index(entry.inode_index);  // Only call for directories
+        }
+    }
+    // save the file system in the disk
+    save_file_system();
+
+}
 /**
  * deleting a directory
  * here we get the last dir if it exist if not just make the num_directories-1 we keep the root
@@ -95,54 +149,13 @@ void delete_dir(const char *path){
         return;
     }
 
-    Directory *dir = &fs_metadata.directories[dir_index];
-    Directory copy_dir = fs_metadata.directories[dir_index];
-    // check if it's the last in the table then just decrement the num_directories
-    int num_dir = fs_metadata.nb_directories;
-    if(dir_index < num_dir -1){
-        Directory last_dir = fs_metadata.directories[num_dir -1];
-        // replace the deleted directory with the last one
-        *dir = last_dir;
-        // change the index of last dir in its dir parent
-        int parent_index = last_dir.parent_index;
-        
-        Directory *parent_last_index = &fs_metadata.directories[parent_index];
-
-        int entry_index = find_index_entry(num_dir -1, parent_index, 0);
-        if(entry_index == -1){
-            printf("Error: The Code is BAD !!! check if you're putting the values right in parent_index in DirectoryEntry, check if you're saving correctly");
-            return;
-        }
-
-        // update the index of the last dir in his dir parent because we moved it 
-        parent_last_index->entries[entry_index].inode_index = dir_index;
-    }
-    //decrementing the num_directories in the two cases
-    FileSystem *fs = &fs_metadata;
-    fs->nb_directories = num_dir -1; 
-    // recursivlly delete everything under 
     
-    for(int i=0; i< copy_dir.num_entries; i++){
-        DirectoryEntry entry = copy_dir.entries[i];
-
-        // skip "." and ".." entries to prevent infinite recursion
-
-        if( i == 0 || i == 1) {
-            continue;
-        }
-        if(entry.isfile){
-            delete_inode(entry.inode_index);
-        } else {
-            delete_dir(entry.inode_index);  // Only call for directories
-        }
-    }
-    // save the file system in the disk
-    save_file_system();
+    delete_dir_index(dir_index);
 
 }
 
 
-const char* getcwd() {
+const char* getcurrentwd() {
     return current_working_directory;
 }
 
