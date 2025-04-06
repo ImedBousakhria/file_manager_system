@@ -57,3 +57,4 @@ bin
 build
 obj
 -p
+*.img
