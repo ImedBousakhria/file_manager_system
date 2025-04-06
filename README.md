@@ -2,6 +2,8 @@
 
 A custom UNIX-like file system implemented in C using inode-based fragmentation, providing comprehensive file and directory management capabilities.
 
+## 🔗 Repository
+[https://github.com/ImedBousakhria/file_manager_system](https://github.com/ImedBousakhria/file_manager_system)
 
 ## 🌟 Key Features
 
