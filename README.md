@@ -39,6 +39,8 @@ A custom UNIX-like file system implemented in C using inode-based fragmentation,
 - Delete File: `-df filename path`
 - Delete Directory: `-dd path`
 - Change File Permissions: `-cf filename path user_index permissions`
+- Move Directory: `-mvd src_path des_path user`  
+- Move File: `-mvf src_path des_path user`
 
 ### Permission System
 - Octal-based permission model (similar to UNIX)
@@ -107,7 +109,7 @@ file_manager_system/
 │   ├── permissions.c   # Permission handling
 │   └── utils.c         # Utility functions
 │
-├── include/            # Header files
+├   # Header files
 │   ├── disk.h
 │   ├── file.h
 │   └── ... (other headers)
