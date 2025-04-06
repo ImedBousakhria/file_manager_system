@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     // Initialize the file system
     disk_init();
     printf("hehehe");
-    move_file("/feryel/dir/text.text");
+    move_file("/feryel/dir/text.text", "/");
     // If no arguments are provided, show help
     if (argc < 2) {
         display_help();
