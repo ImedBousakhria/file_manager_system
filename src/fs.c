@@ -4,7 +4,7 @@
 #include "fs.h"
 #include "permissions.h"
 
-#define FS_FILE_NAME "fs_vdisk.img"
+#define FS_FILE_NAME "fs_vdisk2.img"
 
 // Global variable for filesystem metadata
 FileSystem fs_metadata;
@@ -152,12 +152,16 @@ void print_all_dir(){
         printf("the dir identifier : %d \n", i);
         printf("num_entries : %d \n", dir.num_entries);
         printf("the entries : \n");
+        printf("\n***\n");
+
         for(int i=0; i< dir.num_entries; i++){
             DirectoryEntry entry = dir.entries[i];
             printf("entry index: %d \n", entry.inode_index);
             printf("the entry type : %d \n", entry.isfile);
             printf("name of entry : %s \n", entry.name);
         }
+        printf("\n---------------------\n\n\n");
+
     }
 }
 void list_all_from_root() {

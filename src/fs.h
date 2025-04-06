@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "disk.h"
 
+#define BLOCK_SIZE 512
 #define MAX_NAME_LENGTH 32
 #define NUM_BLOCKS 1024  // Adjust as needed
 #define MAX_ENTRIES_PER_DIR 128  // Example max entries in a directory
@@ -61,5 +62,7 @@ void init_fs();
 void mount_fs();
 int disk_init();
 void list_all_from_root();
+void print_all_inodes();
+void print_all_dir();
 
 #endif

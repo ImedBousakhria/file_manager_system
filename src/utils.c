@@ -102,7 +102,7 @@ int find_index_entry(int index, int parent_index, int type){
  * check if the file/directory existes in the dir given 
  * 
  */
-int entry_exists(char *name, int dir_index, int isfile){
+int entry_exists(const char *name, int dir_index, int isfile){
     Directory dir =fs_metadata.directories[dir_index];
     for(int i=0; i < dir.num_entries; i++){
         if(strcmp(dir.entries[i].name, name) == 0 && dir.entries[i].isfile == isfile){

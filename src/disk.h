@@ -6,7 +6,7 @@
 
 #define BLOCK_SIZE 512
 #define NUM_BLOCKS 1024
-#define DISK_NAME "fs_vdisk.img"
+#define DISK_NAME "fs_vdisk2.img"
 
 int disk_init();
 // int disk_read(int block_num, void *buf);

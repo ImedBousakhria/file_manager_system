@@ -3,7 +3,7 @@
 #include <string.h>
 #include "fs.h"
 
-#define DISK_FILE_NAME "fs_vdisk.img"
+#define DISK_FILE_NAME "fs_vdisk2.img"
 
 FILE *disk_file;
 

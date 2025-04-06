@@ -57,6 +57,9 @@ int create_file(const char *filename, char* parent_path, int user_index, int per
     new_inode->permissions = permissions;
     new_inode->owner_indx = user_index;
     new_inode->parent_index = dir_idx; // Set parent directory
+    for (int i = 0; i < 30; i++) {
+        new_inode->blocks[i] = -1;
+    }
 
  
     DirectoryEntry *entry = &parent_directory->entries[parent_directory->num_entries++];
@@ -112,13 +115,13 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
         printf("User doesn't have the permissions to write in this file");
         return;
     }
-    
+
     // Actually writing 
     while (remaining_size > 0) {
         int block_idx = -1;
 
         // use last block if it's not 100% filled
-        if (last_block_index < 30 && file_inode->blocks[last_block_index] != 0) {
+        if (last_block_index < 30 && file_inode->blocks[last_block_index] != -1) {
             int used_space_in_last_block = file_inode->size % BLOCK_SIZE;
     
             if (used_space_in_last_block < BLOCK_SIZE) {
@@ -163,6 +166,7 @@ void write_to_file(const char *parent_path, const char *filename, const char *da
 
     // update file size
     file_inode->size += size;
+    printf("file size after update is  %d\n", file_inode->size);
 
     // save changes
     save_file_system();
@@ -218,21 +222,25 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
         if (block_idx == -1) {
             break; // No more blocks, exit
         }
+        printf("data block index is %d", block_idx);
 
         // Seek to the correct block location
         seek_to_location(disk_file, block_idx, 0);
 
         // Read data from the block into the buffer
         int read_size = (buffer_size - bytes_read < BLOCK_SIZE) ? buffer_size - bytes_read : BLOCK_SIZE;
-        printf("what to read: \t%d", read_size);
         fread(buffer + bytes_read, 1, read_size, disk_file);
-        printf("trying to print buf from read func  %s", buffer);
+        printf("trying to print buf from read func  %s\n", buffer);
 
 
         
         bytes_read += read_size;
         offset_in_block = 0; // no offset needed for next new blocks
     }
+    for (int i = 0; i < bytes_read; i++) {
+        printf("%02X ", (unsigned char)buffer[i]);
+    }
+    printf("\n");
 
     fclose(disk_file);
 
@@ -246,6 +254,79 @@ void read_from_file(const char *parent_path, const char *filename, char *buffer,
 
 
 
+char* read_full_file(const char *parent_path, const char *filename) {
+    int parent_inode_idx = find_directory_index(parent_path);
+    if (parent_inode_idx == -1) {
+        printf("Error: Invalid path\n");
+        return NULL;
+    }
+
+    // Find file inode
+    int file_inode_idx = -1;
+    Directory *parent_directory = &fs_metadata.directories[parent_inode_idx];
+    for (int i = 0; i < parent_directory->num_entries; i++) {
+        if (strcmp(parent_directory->entries[i].name, filename) == 0) {
+            file_inode_idx = parent_directory->entries[i].inode_index;
+            printf("filename is %s\n", filename);
+            break;
+        }
+    }
+
+    if (file_inode_idx == -1) {
+        printf("Error: File not found\n");
+        return NULL;
+    }
+    printf("file inode idx is %d\n", file_inode_idx);
+
+    Inode *inode = &fs_metadata.inodes[file_inode_idx];
+
+    for (int i = 0; i < 30; i++) {
+        printf("%d ", inode->blocks[i]);
+    }
+    printf("\n");
+
+
+    int file_size = inode->size;
+    if (file_size == 0) {
+        printf("Warning: File is empty\n");
+        return strdup(""); // Return empty string
+    }
+
+    char *buffer = malloc(file_size + 1); // +1 for null terminator
+    if (!buffer) {
+        printf("Error: Memory allocation failed\n");
+        return NULL;
+    }
+
+    FILE *disk_file = fopen("fs_vdisk.img", "rb");
+
+    if (!disk_file) {
+        printf("Error: Could not open disk\n");
+        free(buffer);
+        return NULL;
+    }
+
+    int bytes_read = 0;
+    for (int i = 0; i < 30 && bytes_read < file_size; i++) {
+        int block_idx = inode->blocks[i];
+        if (block_idx == -1) break;
+
+        fseek(disk_file, block_idx * BLOCK_SIZE, SEEK_SET);
+        printf("Seeking to block %d at position %ld\n", block_idx, ftell(disk_file));
+        int to_read = (file_size - bytes_read < BLOCK_SIZE) ? (file_size - bytes_read) : BLOCK_SIZE;
+        fread(buffer + bytes_read, 1, to_read, disk_file);
+    
+        printf("\n");
+        bytes_read += to_read;
+    }
+
+    fclose(disk_file);
+
+    buffer[file_size] = '\0'; // Null-terminate the string
+
+    printf("Read %d bytes from file '%s'\n", bytes_read, filename);
+    return buffer;
+}
 
 /*
  *    change the used to 0 
